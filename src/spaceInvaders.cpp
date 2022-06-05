@@ -1,4 +1,4 @@
-// eľte variabilne bariera pre myship, a zrazka enemies s barierou
+// can write winner to file, but get points when hitting nothing
 #include <ncurses.h>
 #include <iostream>
 #include <unistd.h>
@@ -197,6 +197,7 @@ void Enemy::getDown() {
     mvwprintw(win,coords[0].second,coords[0].first,"   ");
     for ( auto & i : coords )
         i.second++;
+    y++;
     showMe();
 }
 
@@ -206,7 +207,6 @@ void Enemy::moveLeft() {
     for ( auto & i : coords)
         i.first--;
     x--;
-
     mvwprintw(win,coords[2].second,coords[2].first+1," ");
     mvwprintw(win,coords[3].second,coords[3].first+1," ");
     mvwprintw(win,coords[4].second,coords[4].first+1," ");
@@ -321,9 +321,9 @@ void EnemyArmy::killEnemy( pair<int,int> coords ) {
 //--------------------------------------------------------------------------------------------------
 class SpaceShip : public Object {
 private:
-
+    int width;
 public:
-    SpaceShip( int a, int b, WINDOW * w ): Object(w,"O"){
+    SpaceShip( int a, int b, WINDOW * w ): Object(w,"O"),width(a){
         x = a/2 - 5;
         y = b - 4;
         for ( int i = 0; i < 9; i++ ){
@@ -340,9 +340,8 @@ public:
             mvwprintw(win,i.second,i.first," ");
     }
 
-
     bool canMove( int x, int y ) override {
-        if (  x <= 0 || x >= 90 )
+        if (  x <= 0 || x + 9 >= width )
             return true;
         return false;
     }
@@ -353,9 +352,6 @@ public:
    Bullet * shoot(){
         return new Bullet(win,x+4,y-3,true);
     }
-
-
-
 };
 
 
@@ -410,9 +406,9 @@ private:
     int lives;
     void intro();
 public:
-    bool wannaContinue;
-    Level(int l, int s, int lc, int w, int h );
-    ~Level();
+    bool    wannaContinue;
+            Level(int l, int s, int lc, int w, int h );
+            ~Level();
     int     getScore(){ return score; }
     void    play();
     void    scoreIncrease();
@@ -420,9 +416,10 @@ public:
     void    died();
     void    obstacleCreator();
     void    hitByMyBullet();
+    void    ask();
     bool    obstacleHitted( const pair<int,int> & c);
-    bool    ask();
     bool    hitByEnemyBullet( const pair<int,int> & c );
+    void    writePlayer();
 };
 
 
@@ -464,6 +461,7 @@ Level::Level(int l, int s, int lc, int w, int h ):level(l),wannaContinue(true), 
     refresh();
 }
 
+
 Level::~Level(){
     delete myBullet;
     delete spaceShip;
@@ -474,15 +472,86 @@ Level::~Level(){
         delete obstacles[i];
 }
 
+
 void Level::obstacleCreator(){
     for ( int i = 5; i < width -10; i+= 15 )
         obstacles.push_back(new Obstacle(win,i,height-10) );
 }
 
-bool Level::ask(){
+vector<pair<string,int>> getPlayers(int score){
+    ifstream file;
+    file.open("top_five.txt");
+    string nickname;
+    int best_score;
+    vector<pair<string, int>> topky;
+    while ( file >> nickname && file >> best_score )
+        topky.emplace_back( nickname, best_score );
+    pair<string, int> newone("",score);
+    sort(topky.begin(), topky.end(), [](const pair<string,int>&a, const pair<string,int>&b )
+    { return a.second > b.second; } );
+    auto i = lower_bound(topky.begin(), topky.end(),newone, [](const pair<string,int>&a, const pair<string,int>&b )
+    { return a.second > b.second; } );
+
+    topky.insert(i, newone);
+    file.close();
+    return topky;
+}
+
+void writeToFile( vector<pair<string,int>> & topky ){
+    ofstream file;
+    file.open("top_five.txt");
+    for ( int j = 0; j < topky.size() and j < 5 ; j++ ){
+        file << topky[j].first << " " << topky[j].second << endl;
+    }
+
+    file.close();
+}
+
+
+void Level::writePlayer() {
+    nodelay(stdscr, FALSE);
+    echo();
+    vector<pair<string, int>> topky = getPlayers(score);
+    int index = -1;
+    pair<int,int> edit(-1,-1);
+    for ( int j = 0; j < topky.size() and j < 5 ; j++ ){
+        mvwprintw(win,height/2+j,width/2-5,"%d    %s",topky[j].second, topky[j].first.c_str() );
+        if ( topky[j].second == score and topky[j].first == "" ){
+            edit = make_pair(width/2-1+int(log10(score) + 1),height/2+j );
+            index = j;
+        }
+    }
+    if ( index == 4 ){
+        noecho();
+        wclear( win );
+        wrefresh(win);
+        return;
+    }
+
+    move(edit.second,edit.first);
+    wrefresh(win);
+
+    char a ;
+    string playerNick;
+    do{
+        a = getch();
+        playerNick += a;
+    }while( a != '\n' or playerNick.size()==1 );
+    playerNick.pop_back();
+    topky[index].first = playerNick;
+    writeToFile(topky);
+    noecho();
+    wclear( win );
+    wrefresh(win);
+
+}
+
+
+void Level::ask(){
     wclear(win);
     box(win,0,0);
-    mvwprintw( win, height/2, width/2-4,"GAME OVER");
+    mvwprintw( win, height/2-5, width/2-4,"GAME OVER");
+    writePlayer();
     mvwprintw( win, height/2 + 2, width/2-15,"If you want continue press 'Y'");
     nodelay(stdscr, FALSE);
     wrefresh(win);
@@ -491,7 +560,6 @@ bool Level::ask(){
         wannaContinue = false;
     wclear(win);
     wrefresh(win);
-    return false;
 }
 
 
@@ -499,17 +567,16 @@ void Level::died(){
     sleep(2);
     delete spaceShip;
     spaceShip = nullptr;
-    if ( ! --lives ){
+    if ( ! --lives )
         return;
-    }
 
     spaceShip = new SpaceShip(width,height,win);
     spaceShip->showMe();
     mvwprintw(win,height-1,2,"LIVES: %d", lives);
     enemyBullets.clear();
     wrefresh(win);
-
 }
+
 bool    Level::obstacleHitted( const pair<int,int> & c){
 
     for ( int i = 0; i < obstacles.size() ; i++ )
@@ -534,28 +601,11 @@ void Level::scoreIncrease() {
 
 void Level::hitByMyBullet(){
 
-    //auto hittedObject = myBullet->bulletHit();
     pair<int,int> colision = make_pair( myBullet->getCoords().first,myBullet->getCoords().second-1 );
 
     if ( obstacleHitted( colision ) )
         scoreIncrease();
     enemyArmy->killEnemy( colision );
-
-    /*
-    mvwprintw(win,1,1,"%d   %d  %c", colision.first, colision.second, hittedObject);
-    wrefresh(win);
-
-    if ( hittedObject == 'X' ){
-        scoreIncrease();
-        enemyArmy->killEnemy( colision );
-    }
-
-    if ( hittedObject == 'Q' ){
-        mvwprintw(win,1,1," hit obstacle");
-        wrefresh(win);
-        obstacleHitted( colision );
-    }
-    */
 
     delete myBullet;
     myBullet = nullptr;
@@ -566,8 +616,6 @@ bool Level::hitByEnemyBullet( const pair<int,int> & c ){
         return true;
     obstacleHitted(make_pair(c.first,c.second+1));
     return false;
-
-
 }
 
 
@@ -593,10 +641,8 @@ void Level::play(){
 
     int shoot = 40;
 
-    while ( enemyArmy->isAlive() && spaceShip != nullptr ){
+    while ( enemyArmy->isAlive() and spaceShip != nullptr ){
         char a = 'q' ;
-        //cin.clear();
-        //fflush(stdin);
         if ( ( a = getch() ) != ERR ){
             switch (a) {
                 case 'a': spaceShip->moveLeft(); break;
@@ -628,16 +674,17 @@ void Level::play(){
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
-int main() {
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+int main(){
     bool wantContinue = true;
     int i = 0;
     int score = 0;
-    int livesCount = 3;
-    int width = 70;
+    int livesCount = 1;
+    int width = 65;
     int height = 30;
 
-    while ( wantContinue )
-    {
+    while ( wantContinue ){
         Level * lvl = new Level(++i, score, livesCount, width, height);
         lvl->play();
 
