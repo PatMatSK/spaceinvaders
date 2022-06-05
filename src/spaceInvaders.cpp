@@ -1,4 +1,3 @@
-// can write winner to file, but get points when hitting nothing
 #include <ncurses.h>
 #include <iostream>
 #include <unistd.h>
@@ -239,25 +238,27 @@ private:
     int width;
 public:
 
-    EnemyArmy( WINDOW * win, int count , int w ):bounceCount(0),direction(true),width(w){
-        for ( int i = 1 ; i < count+1 ; i++ )
-            for ( int j = 0 ; j < 6 ; j+=3 )
-                enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 5 ));
-
-        leftEdge = 15;
-        rightEdge = 15 + count * 5;
-        wrefresh( win );
-    }
-    ~EnemyArmy(){
+        EnemyArmy( WINDOW * win, int count , int w );
+        ~EnemyArmy(){
         enemies.clear();
     }
-    bool isAlive(){ return !enemies.empty(); }
-    void moveArmy();
-    void killEnemy( pair<int,int> coords );
-    void getCloser();
-    void checkChange();
-    Bullet *  enemyFire() const ;
+    bool    isAlive(){ return !enemies.empty(); }
+    void    moveArmy();
+    bool    killEnemy( pair<int,int> coords );
+    void    getCloser();
+    void    checkChange();
+    Bullet* enemyFire() const ;
 };
+
+EnemyArmy::EnemyArmy(WINDOW *win, int count, int w):bounceCount(0),direction(true),width(w){
+    for ( int i = 1 ; i < count+1 ; i++ )
+        for ( int j = 0 ; j < 6 ; j+=3 )
+            enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 5 ));
+
+    leftEdge = 15;
+    rightEdge = 15 + count * 5;
+    wrefresh( win );
+}
 
 Bullet * EnemyArmy::enemyFire() const {
     auto it = enemies.cbegin();
@@ -307,14 +308,15 @@ void EnemyArmy::moveArmy() {
 }
 
 
-void EnemyArmy::killEnemy( pair<int,int> coords ) {
+bool EnemyArmy::killEnemy( pair<int,int> coords ) {
 
     for ( auto i = enemies.begin() ; i != enemies.end() ; i++ ){
         if ( (*i)->contains(coords ) ){
             enemies.erase(i);
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -405,21 +407,22 @@ private:
     int height,width;
     int lives;
     void intro();
-public:
-    bool    wannaContinue;
-            Level(int l, int s, int lc, int w, int h );
-            ~Level();
-    int     getScore(){ return score; }
-    void    play();
     void    scoreIncrease();
     void    moveBullets();
-    void    died();
+    void    playerDied();
     void    obstacleCreator();
     void    hitByMyBullet();
     void    ask();
     bool    obstacleHitted( const pair<int,int> & c);
     bool    hitByEnemyBullet( const pair<int,int> & c );
     void    writePlayer();
+    string getNickName( const pair<int,int>&c );
+public:
+    bool    wannaContinue;
+            Level(int l, int s, int lc, int w, int h );
+            ~Level();
+    int     getScore(){ return score; }
+    void    play();
 };
 
 
@@ -429,13 +432,13 @@ void Level::intro() {
     string nickname;
     int i = 0;
     mvwprintw(win,height/2-4,width/2-7,"SPACE INVADERS");
-    mvwprintw(win,height/2-2,width/2-17,"top 5 players:");
+    mvwprintw(win,height/2-2,width/2-7,"top 5 players");
 
     while ( getline(file, nickname)  )
-        mvwprintw(win,height/2+i++,width/2-3,nickname.c_str());
+        mvwprintw(win,height/2+i++,width/2-6,nickname.c_str());
 
 
-    mvwprintw(win,height/2+10,width/2-7,"(press any key to start)");
+    mvwprintw(win,height/2+10,width/2-12,"(press any key to start)");
     move(0,0);
     wrefresh(win);
     getch();
@@ -478,6 +481,7 @@ void Level::obstacleCreator(){
         obstacles.push_back(new Obstacle(win,i,height-10) );
 }
 
+
 vector<pair<string,int>> getPlayers(int score){
     ifstream file;
     file.open("top_five.txt");
@@ -497,53 +501,55 @@ vector<pair<string,int>> getPlayers(int score){
     return topky;
 }
 
+
 void writeToFile( vector<pair<string,int>> & topky ){
     ofstream file;
     file.open("top_five.txt");
-    for ( int j = 0; j < topky.size() and j < 5 ; j++ ){
+    for ( int j = 0; j < topky.size() and j < 5 ; j++ )
         file << topky[j].first << " " << topky[j].second << endl;
-    }
-
     file.close();
 }
 
-
-void Level::writePlayer() {
+string Level::getNickName( const pair<int,int>& edit ){
     nodelay(stdscr, FALSE);
     echo();
-    vector<pair<string, int>> topky = getPlayers(score);
-    int index = -1;
-    pair<int,int> edit(-1,-1);
-    for ( int j = 0; j < topky.size() and j < 5 ; j++ ){
-        mvwprintw(win,height/2+j,width/2-5,"%d    %s",topky[j].second, topky[j].first.c_str() );
-        if ( topky[j].second == score and topky[j].first == "" ){
-            edit = make_pair(width/2-1+int(log10(score) + 1),height/2+j );
-            index = j;
-        }
-    }
-    if ( index == 4 ){
-        noecho();
-        wclear( win );
-        wrefresh(win);
-        return;
-    }
-
+    mvwprintw(win,height/2-2,width/2-19,"Enter your nickname(10 characters max)");
     move(edit.second,edit.first);
     wrefresh(win);
-
     char a ;
     string playerNick;
     do{
         a = getch();
         playerNick += a;
-    }while( a != '\n' or playerNick.size()==1 );
+    }while( (a != '\n' or playerNick.size()==1) and playerNick.size()<=10 );
     playerNick.pop_back();
-    topky[index].first = playerNick;
-    writeToFile(topky);
     noecho();
-    wclear( win );
-    wrefresh(win);
+    return playerNick;
+}
 
+void Level::writePlayer() {
+    vector<pair<string, int>> topky = getPlayers(score);
+    int index = -1;
+    pair<int,int> edit(-1,-1);
+    for ( int j = 0; j < topky.size() and j < 5 ; j++ ){
+        mvwprintw(win,height/2+j,width/2-5,"%d    %s",topky[j].second, topky[j].first.c_str() );
+        if ( topky[j].second == score and topky[j].first.empty() ){
+            edit = make_pair(width/2-1+int(log10(score) + 1),height/2+j );
+            index = j;
+        }
+    }
+    if ( index == -1 ){
+        wclear( win );
+        box(win,0,0);
+        wrefresh(win);
+        return;
+    }
+
+    topky[index].first = getNickName(edit);
+    writeToFile(topky);
+    wclear( win );
+    box(win,0,0);
+    wrefresh(win);
 }
 
 
@@ -552,7 +558,7 @@ void Level::ask(){
     box(win,0,0);
     mvwprintw( win, height/2-5, width/2-4,"GAME OVER");
     writePlayer();
-    mvwprintw( win, height/2 + 2, width/2-15,"If you want continue press 'Y'");
+    mvwprintw( win, height/2 , width/2-12,"press 'Y' to play again");
     nodelay(stdscr, FALSE);
     wrefresh(win);
     char a = getch();
@@ -563,7 +569,7 @@ void Level::ask(){
 }
 
 
-void Level::died(){
+void Level::playerDied(){
     sleep(2);
     delete spaceShip;
     spaceShip = nullptr;
@@ -603,9 +609,9 @@ void Level::hitByMyBullet(){
 
     pair<int,int> colision = make_pair( myBullet->getCoords().first,myBullet->getCoords().second-1 );
 
-    if ( obstacleHitted( colision ) )
+    obstacleHitted( colision );
+    if ( enemyArmy->killEnemy( colision ))
         scoreIncrease();
-    enemyArmy->killEnemy( colision );
 
     delete myBullet;
     myBullet = nullptr;
@@ -626,7 +632,7 @@ void Level::moveBullets() {
     for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )        //----------------nedokonane------------------------------
         if ( !(*enemyBullet)->move() ){
             if ( hitByEnemyBullet((*enemyBullet)->getCoords() ) )
-                died();
+                playerDied();
             else
                 enemyBullets.erase(enemyBullet);
             return;
