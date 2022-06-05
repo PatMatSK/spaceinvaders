@@ -6,6 +6,7 @@
 #include <vector>
 #include <Carbon/Carbon.h>
 #include <list>
+#include <fstream>
 
 using namespace std;
 
@@ -169,7 +170,7 @@ public:
         for ( int i = 1 ; i < count+1 ; i++ )
             for ( int j = 0 ; j < 15 ; j+=3 )
                 enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 10 ));
-        direction = has_colors() ;
+        direction = true;
         leftEdge = 15;
         rightEdge = 15 + count * 5;
         wrefresh( win );
@@ -289,22 +290,28 @@ public:
 class Level{
 
 private:
+    int score;
     int level;
     SpaceShip * spaceShip;
     Bullet  * myBullet;
     EnemyArmy * enemyArmy;
     WINDOW  * win;
     int height,width;
+    void intro();
 public:
     bool wannaContinue;
-    Level(int l ):level(l),wannaContinue(true), myBullet(nullptr), height(50), width(100)
+    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(50), width(100)
     {
+        score = s;
         initscr();
         win = newwin(height,width,0,0);
         refresh();
         box(win,0,0);
+        intro();
+        box(win,0,0);
         enemyArmy = new EnemyArmy(win, 10);
         spaceShip = new SpaceShip(width,height,win);
+        mvwprintw(win,2,2,"SCORE: %d", score);
         wrefresh(win);
         refresh();
     }
@@ -314,14 +321,46 @@ public:
         delete enemyArmy;
     }
     void play();
-
+    int getScore(){ return score; }
+    void scoreIncrease();
 };
+
+
+void Level::intro() {
+    ifstream file;
+    file.open("top_five.txt");
+    string nickname;
+    int i = 0;
+    mvwprintw(win,height/2-4,width/2-7,"SPACE INVADERS");
+    mvwprintw(win,height/2-2,width/2-17,"top 5 players:");
+
+    while ( getline(file, nickname)  )
+        mvwprintw(win,height/2+i++,width/2-3,nickname.c_str());
+
+
+    mvwprintw(win,height/2+10,width/2-7,"(press any key to start)");
+    move(0,0);
+    wrefresh(win);
+    getch();
+    wclear(win);
+    file.close();
+}
+
+
+void Level::scoreIncrease() {
+    score += 50;
+    mvwprintw(win,2,2,"SCORE: %d", score);
+    wrefresh(win);
+}
+
 
 
 
 void Level::play(){
+
     noecho();
     nodelay(stdscr, TRUE);
+
     while ( enemyArmy->isAlive() && spaceShip != nullptr )
     {
         char a  ;
@@ -338,6 +377,7 @@ void Level::play(){
         if ( myBullet )
             if ( ! myBullet->move() ){
                 enemyArmy->killEnemy( myBullet->getCoords() );
+                scoreIncrease();
                 delete myBullet;
                 myBullet = nullptr;
             }
@@ -346,6 +386,7 @@ void Level::play(){
 
         usleep(100000);
     }
+
 }
 
 
@@ -355,13 +396,14 @@ void Level::play(){
 int main() {
     int i = 0;
     bool wantContinue = true;
-
+    int score = 0;
     while (wantContinue)
     {
-        Level * lvl = new Level(++i);
+        Level * lvl = new Level(++i, score);
         lvl->play();
         wantContinue = lvl->wannaContinue;
         endwin();
+        score = lvl->getScore();
         delete lvl;
     }
 
