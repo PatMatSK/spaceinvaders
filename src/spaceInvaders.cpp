@@ -4,7 +4,6 @@
 #include <ctype.h>
 #include <time.h>
 #include <vector>
-#include <Carbon/Carbon.h>
 #include <list>
 #include <fstream>
 #include  <random>
@@ -43,7 +42,7 @@ bool Object::contains( const pair<int,int> & c){
 
 void Object::showMe(){
     for ( const auto & i: coords )
-        mvwprintw(win,i.second,i.first, me);
+        mvwprintw(win,i.second,i.first,me);
     wrefresh(win);
 
 }
@@ -118,11 +117,16 @@ unsigned int Bullet::bulletHit(){
 class Obstacle: public Object{
 public:
     Obstacle(WINDOW * w, int a, int b);
+    Obstacle(WINDOW * w, vector<pair<int,int>> v);
     bool    getDamage( const pair<int,int> & c);
+    void    writeCoords( ofstream & file);
 };
+Obstacle::Obstacle(WINDOW *w, vector<pair<int, int>> v): Object(w,"Q") {
+    coords = std::move(v);
+    showMe();
+}
 
 Obstacle::Obstacle(WINDOW *w, int a, int b): Object(w,"Q") {
-    x = a; y = b;
     coords.emplace_back(a,b);
     coords.emplace_back(a+1,b);
     coords.emplace_back(a+2,b);
@@ -137,11 +141,16 @@ Obstacle::Obstacle(WINDOW *w, int a, int b): Object(w,"Q") {
 }
 
 bool      Obstacle::getDamage( const pair<int,int> & c ){
-    //auto i = find(coords.begin(), coords.end(), c);
     coords.erase(find(coords.begin(), coords.end(), c) );
     mvwprintw(win,c.second,c.first," ");
     wrefresh(win);
     return coords.empty();
+}
+
+void Obstacle::writeCoords(ofstream &file) {
+    for ( const auto & i : coords )
+        file << i.first << " " << i.second << endl;
+    file << endl;
 }
 
 
@@ -396,8 +405,6 @@ void SpaceShip::moveLeft(){
 class Level{
 
 private:
-    int score;
-    int level;
     SpaceShip * spaceShip;
     Bullet  * myBullet;
     EnemyArmy * enemyArmy;
@@ -405,8 +412,8 @@ private:
     vector<Obstacle*> obstacles;
     list<shared_ptr<Bullet>> enemyBullets;
     int height,width;
-    int lives;
-    void intro();
+    string  getNickName( const pair<int,int>& edit );
+    void    intro();
     void    scoreIncrease();
     void    moveBullets();
     void    playerDied();
@@ -416,13 +423,19 @@ private:
     bool    obstacleHitted( const pair<int,int> & c);
     bool    hitByEnemyBullet( const pair<int,int> & c );
     void    writePlayer();
-    string getNickName( const pair<int,int>&c );
+    void    saveObstacles();
+    void    obstacleReader();
 public:
+    int level;
+    int score;
+    int lives;
+    bool fromStart;
     bool    wannaContinue;
             Level(int l, int s, int lc, int w, int h );
             ~Level();
-    int     getScore(){ return score; }
+    int     getScore() const{ return score; }
     void    play();
+
 };
 
 
@@ -437,7 +450,6 @@ void Level::intro() {
     while ( getline(file, nickname)  )
         mvwprintw(win,height/2+i++,width/2-6,nickname.c_str());
 
-
     mvwprintw(win,height/2+10,width/2-12,"(press any key to start)");
     move(0,0);
     wrefresh(win);
@@ -446,7 +458,7 @@ void Level::intro() {
     file.close();
 }
 
-Level::Level(int l, int s, int lc, int w, int h ):level(l),wannaContinue(true), myBullet(nullptr), height(h), width(w), lives(lc), score(s)
+Level::Level(int l, int s, int lc, int w, int h ):level(l),wannaContinue(true), myBullet(nullptr), height(h), width(w), lives(lc), score(s), fromStart(false)
 {
     initscr();
     win = newwin(height,width,0,0);
@@ -455,10 +467,15 @@ Level::Level(int l, int s, int lc, int w, int h ):level(l),wannaContinue(true), 
     intro();
     box(win,0,0);
 
-    enemyArmy = new EnemyArmy(win, 3, width);
+    enemyArmy = new EnemyArmy(win, 1, width);
     spaceShip = new SpaceShip(width,height,win);
-    obstacleCreator();
-    mvwprintw(win,2,2,"SCORE: %d", score);
+
+    if ( level == 1 )
+        obstacleCreator();
+    else
+        obstacleReader();
+
+     mvwprintw(win,2,2,"SCORE: %d", score);
     mvwprintw(win,height-1,2,"LIVES: %d", lives);
     wrefresh(win);
     refresh();
@@ -480,7 +497,22 @@ void Level::obstacleCreator(){
     for ( int i = 5; i < width -10; i+= 15 )
         obstacles.push_back(new Obstacle(win,i,height-10) );
 }
+void Level::obstacleReader() {
+    ifstream file;
+    file.open("obstacles.txt");
+    pair<int,int> obstacleCoords;
 
+    while ( ! file.eof() ){
+        vector<pair<int,int>> allCords;
+        while ( file >> obstacleCoords.first and file >> obstacleCoords.second )
+            allCords.push_back(obstacleCoords);
+        obstacles.push_back(new Obstacle(win,allCords));
+    }
+
+
+    file.close();
+
+}
 
 vector<pair<string,int>> getPlayers(int score){
     ifstream file;
@@ -510,9 +542,18 @@ void writeToFile( vector<pair<string,int>> & topky ){
     file.close();
 }
 
+
+
+void myCleaner(){
+    char m;
+    while ( (m = getch()) != ERR)
+        m = 'q';
+}
+
 string Level::getNickName( const pair<int,int>& edit ){
-    nodelay(stdscr, FALSE);
+    //myCleaner();
     echo();
+    nodelay(stdscr, FALSE);
     mvwprintw(win,height/2-2,width/2-19,"Enter your nickname(10 characters max)");
     move(edit.second,edit.first);
     wrefresh(win);
@@ -559,11 +600,13 @@ void Level::ask(){
     mvwprintw( win, height/2-5, width/2-4,"GAME OVER");
     writePlayer();
     mvwprintw( win, height/2 , width/2-12,"press 'Y' to play again");
+    //myCleaner();
     nodelay(stdscr, FALSE);
     wrefresh(win);
-    char a = getch();
-    if ( a != 'y' )
+    if ( getch() != 'y' )
         wannaContinue = false;
+    else
+        fromStart = true;
     wclear(win);
     wrefresh(win);
 }
@@ -583,6 +626,7 @@ void Level::playerDied(){
     wrefresh(win);
 }
 
+
 bool    Level::obstacleHitted( const pair<int,int> & c){
 
     for ( int i = 0; i < obstacles.size() ; i++ )
@@ -598,7 +642,7 @@ bool    Level::obstacleHitted( const pair<int,int> & c){
 
 
 void Level::scoreIncrease() {
-    score += 50;
+    score += 45 + level * 5 ;
     mvwprintw(win,2,2,"SCORE: %d", score);
     wrefresh(win);
 }
@@ -638,22 +682,32 @@ void Level::moveBullets() {
             return;
         }
 }
+void Level::saveObstacles(){
+    ofstream file;
+    file.open("obstacles.txt");
+
+    for ( const auto & i : obstacles )
+        i->writeCoords(file);
+
+    file.close();
+}
 
 
 void Level::play(){
 
     noecho();
     nodelay(stdscr, TRUE);
+    int shootFrequency = 45 - level * 5 ;
 
-    int shoot = 40;
 
     while ( enemyArmy->isAlive() and spaceShip != nullptr ){
-        char a = 'q' ;
+        char a;
         if ( ( a = getch() ) != ERR ){
             switch (a) {
                 case 'a': spaceShip->moveLeft(); break;
                 case 'd': spaceShip->moveRight(); break;
-                case ' ':{
+                case ' ':
+                {
                     if ( myBullet == nullptr )
                         myBullet = spaceShip->shoot();
                 } break;
@@ -661,18 +715,20 @@ void Level::play(){
             }
         }
 
-        if ( ! shoot-- ){
+        if ( ! shootFrequency-- ){
             enemyBullets.emplace_back(enemyArmy->enemyFire());
-            shoot = 40;
+            shootFrequency = 40 - level*5 ;
         }
-
         enemyArmy->moveArmy();
         moveBullets();
-
         usleep(100000);
     }
     if ( spaceShip == nullptr )
         ask();
+    else{
+        saveObstacles();
+        score += 100;
+    }
 
 }
 
@@ -683,21 +739,30 @@ void Level::play(){
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 int main(){
+
+
     bool wantContinue = true;
-    int i = 0;
-    int score = 0;
+    int level = 0;
+    int score = 500;
     int livesCount = 1;
     int width = 65;
     int height = 30;
 
     while ( wantContinue ){
-        Level * lvl = new Level(++i, score, livesCount, width, height);
+        Level * lvl = new Level(++level, score, livesCount, width, height);
         lvl->play();
-
-
         wantContinue = lvl->wannaContinue;
         endwin();
-        score = lvl->getScore();
+        if ( lvl->fromStart ){
+            score = 0;
+            livesCount = 1;
+            level = 0;
+        }
+        else{
+            score = lvl->score;
+            livesCount = lvl->lives;
+            level = lvl->level;
+        }
         delete lvl;
     }
 
