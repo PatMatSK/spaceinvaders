@@ -24,7 +24,7 @@ protected:
     int y;
     const char * me;
 public:
-    Object(WINDOW * w, const char * m ): win(w),me(m){}
+                    Object(WINDOW * w, const char * m ): win(w),me(m){}
     virtual bool    canMove(int a, int b){return false;}
     virtual void    move( bool direction ){}
     bool            contains( const pair<int,int> & c);
@@ -32,8 +32,6 @@ public:
 };
 
 bool Object::contains( const pair<int,int> & c){
-
-    //if ( count(coords.begin(), coords.end(), c) )
     auto i = find(coords.begin(), coords.end(), c);
     if ( i != coords.end() )
         return true;
@@ -52,27 +50,24 @@ void Object::showMe(){
 //--------------------------------------------------------------------------------------------------
 class Bullet: public Object{
 private:
-    //int x;
-    //int y;
-    bool direction;   // true == up;   false == down
-
+    bool direction;
 public:
-    Bullet(WINDOW *w, int a, int b, bool d) : Object(w,"|"), direction(d) {
-        coords.emplace_back(a,b);
-        showMe();
-    }
-    ~Bullet(){
-        mvwprintw( win, coords[0].second, coords[0].first, " " );
-        wrefresh(win);
-    }
+                    Bullet(WINDOW *w, int a, int b, bool d);
+                    ~Bullet();
     pair<int,int>   getCoords(){ return coords[0]; }
     bool            canMove(int x, int y) override;
     bool            move();
-    unsigned int    bulletHit();
-
 };
 
+Bullet::Bullet(WINDOW *w, int a, int b, bool d) : Object(w,"|"), direction(d) {
+    coords.emplace_back(a,b);
+    showMe();
+}
 
+Bullet::~Bullet(){
+    mvwprintw( win, coords[0].second, coords[0].first, " " );
+    wrefresh(win);
+}
 
 
 bool Bullet::canMove(int x, int y) {
@@ -85,29 +80,19 @@ bool Bullet::canMove(int x, int y) {
 bool Bullet::move(){
     int old_y = coords[0].second;
     if ( direction && canMove( coords[0].first, --coords[0].second ) ){
-        //y--;
         showMe();
         mvwprintw(win,coords[0].second+1,coords[0].first," ");
         wrefresh(win);
         return true;
     }
     else if ( canMove( coords[0].first, ++coords[0].second ) ){
-        //y++;
         showMe();
         mvwprintw(win,coords[0].second-1,coords[0].first," ");
         wrefresh(win);
         return true;
     }
-    //if ( coords[0].second > old_y )
     coords[0].second = old_y;
-
     return false;
-}
-
-unsigned int Bullet::bulletHit(){
-    if ( direction )
-        return chtype mvwinch( win, coords[0].second-1, x);
-    return chtype mvwinch( win, coords[0].second+1, x);
 }
 
 
@@ -116,8 +101,8 @@ unsigned int Bullet::bulletHit(){
 
 class Obstacle: public Object{
 public:
-    Obstacle(WINDOW * w, int a, int b);
-    Obstacle(WINDOW * w, vector<pair<int,int>> v);
+            Obstacle(WINDOW * w, int a, int b);
+            Obstacle(WINDOW * w, vector<pair<int,int>> v);
     bool    getDamage( const pair<int,int> & c);
     void    writeCoords( ofstream & file);
 };
@@ -158,33 +143,35 @@ void Obstacle::writeCoords(ofstream &file) {
 //--------------------------------------------------------------------------------------------------
 
 class Enemy:public Object{
-private:
-
 public:
-    Enemy(WINDOW * w, int a, int b): Object(w,"X") {
-        x = a; y = b;
-        coords.emplace_back(x,y);
-        coords.emplace_back(x+1,y);
-        coords.emplace_back(x+2,y);
-        coords.emplace_back(x,y+1);
-        coords.emplace_back(x+2,y+1);
-        showMe();
-    }
-    ~Enemy(){
-        for ( const auto & i: coords )
-            mvwprintw(win,i.second,i.first," ");
-        wrefresh(win);
-    }
-
-    void moveLeft();
-    void moveRight();
-    void getDown();
-    void move( bool direction ) override;
-    Bullet * shoot() const;
+                        Enemy(WINDOW * w, int a, int b);
+                        ~Enemy();
+    void                moveLeft();
+    void                moveRight();
+    void                getDown();
+    void                move( bool direction ) override;
+    unique_ptr<Bullet>  shoot() const;
 };
 
-Bullet * Enemy::shoot() const {
-    return new Bullet(win,x+1,y+2,false);
+
+
+Enemy::Enemy(WINDOW * w, int a, int b): Object(w,"X") {
+    x = a; y = b;
+    coords.emplace_back(x,y);
+    coords.emplace_back(x+1,y);
+    coords.emplace_back(x+2,y);
+    coords.emplace_back(x,y+1);
+    coords.emplace_back(x+2,y+1);
+    showMe();
+}
+
+Enemy::~Enemy() {
+    for (const auto &i: coords)
+        mvwprintw(win, i.second, i.first, " ");
+}
+
+unique_ptr<Bullet>  Enemy::shoot() const {
+    return make_unique<Bullet> (Bullet(win,x+1,y+2,false));
 }
 
 
@@ -243,33 +230,37 @@ private:
     bool direction; // true == right, false == left
     int leftEdge;
     int rightEdge;
+    int downEdge;   // donw edge of army
     int bounceCount;
     int width;
 public:
+    int downLimit;  // donw limit influenced by obstacles and spaceship
 
-        EnemyArmy( WINDOW * win, int count , int w );
-        ~EnemyArmy(){
-        enemies.clear();
-    }
-    bool    isAlive(){ return !enemies.empty(); }
-    void    moveArmy();
-    bool    killEnemy( pair<int,int> coords );
-    void    getCloser();
-    void    checkChange();
-    Bullet* enemyFire() const ;
+                        EnemyArmy( WINDOW * win, int count , int _width, int _limit );
+                        ~EnemyArmy();
+    bool                isAlive(){ return !enemies.empty(); }
+    void                moveArmy();
+    bool                killEnemy( pair<int,int> coords );
+    void                getCloser();
+    void                checkChange();
+    unique_ptr<Bullet>  enemyFire() const ;
 };
 
-EnemyArmy::EnemyArmy(WINDOW *win, int count, int w):bounceCount(0),direction(true),width(w){
+EnemyArmy::EnemyArmy(WINDOW *win, int count, int _width, int _limit):bounceCount(0),direction(true),width(_width),downLimit(_limit){
     for ( int i = 1 ; i < count+1 ; i++ )
-        for ( int j = 0 ; j < 6 ; j+=3 )
+        for ( int j = 0 ; j < 12 ; j+=3 )
             enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 5 ));
-
+    downEdge = 18;  // limit for one row is 6, add 4 for every next row
     leftEdge = 15;
     rightEdge = 15 + count * 5;
     wrefresh( win );
 }
 
-Bullet * EnemyArmy::enemyFire() const {
+EnemyArmy::~EnemyArmy(){
+    enemies.clear();
+}
+
+unique_ptr<Bullet> EnemyArmy::enemyFire() const {
     auto it = enemies.cbegin();
     int random = rand() % enemies.size();
     advance(it, random);
@@ -286,7 +277,7 @@ void EnemyArmy::checkChange() {
         direction = true;
         bounceCount++;
     }
-    if ( bounceCount == 3 ){
+    if ( bounceCount == 1 && downEdge < downLimit ){
         getCloser();
         bounceCount = 0;
     }
@@ -294,6 +285,7 @@ void EnemyArmy::checkChange() {
 }
 
 void EnemyArmy::getCloser() {
+    downEdge++;
     for ( auto & i : enemies )
         i->getDown();
 }
@@ -318,7 +310,6 @@ void EnemyArmy::moveArmy() {
 
 
 bool EnemyArmy::killEnemy( pair<int,int> coords ) {
-
     for ( auto i = enemies.begin() ; i != enemies.end() ; i++ ){
         if ( (*i)->contains(coords ) ){
             enemies.erase(i);
@@ -334,37 +325,44 @@ class SpaceShip : public Object {
 private:
     int width;
 public:
-    SpaceShip( int a, int b, WINDOW * w ): Object(w,"O"),width(a){
-        x = a/2 - 5;
-        y = b - 4;
-        for ( int i = 0; i < 9; i++ ){
-            coords.emplace_back(x+i,y);
-            coords.emplace_back(x+i,y-1);
-        }
-        coords.emplace_back(x+3,y-2);
-        coords.emplace_back(x+4,y-2);
-        coords.emplace_back(x+5,y-2);
-        showMe();
-    }
-    ~SpaceShip(){
-        for ( const auto & i : coords )
-            mvwprintw(win,i.second,i.first," ");
-    }
-
-    bool canMove( int x, int y ) override {
-        if (  x <= 0 || x + 9 >= width )
-            return true;
-        return false;
-    }
-
-    void moveLeft();
-    void moveRight();
-
-   Bullet * shoot(){
-        return new Bullet(win,x+4,y-3,true);
-    }
+                        SpaceShip( int a, int b, WINDOW * w );
+                        ~SpaceShip();
+    bool                canMove( int x, int y ) override;
+    void                moveLeft();
+    void                moveRight();
+    Bullet *            shoot();
 };
 
+
+
+SpaceShip::SpaceShip( int a, int b, WINDOW * w ): Object(w,"O"),width(a){
+    x = a/2 - 5;
+    y = b - 4;
+    for ( int i = 0; i < 9; i++ ){
+        coords.emplace_back(x+i,y);
+        coords.emplace_back(x+i,y-1);
+    }
+    coords.emplace_back(x+3,y-2);
+    coords.emplace_back(x+4,y-2);
+    coords.emplace_back(x+5,y-2);
+    showMe();
+}
+
+SpaceShip::~SpaceShip(){
+    for ( const auto & i : coords )
+        mvwprintw(win,i.second,i.first," ");
+}
+
+
+bool SpaceShip::canMove( int x, int y ){
+    if (  x <= 0 || x + 9 >= width )
+        return true;
+    return false;
+}
+
+Bullet* SpaceShip::shoot(){
+    return new Bullet(win,x+4,y-3,true);
+}
 
 void SpaceShip::moveRight(){
     if (  canMove(x+1, y) )
@@ -403,16 +401,15 @@ void SpaceShip::moveLeft(){
 
 
 class Level{
-
 private:
     SpaceShip * spaceShip;
     Bullet  * myBullet;
     EnemyArmy * enemyArmy;
     WINDOW  * win;
-    vector<Obstacle*> obstacles;
-    list<shared_ptr<Bullet>> enemyBullets;
+    list<unique_ptr<Obstacle>> obstacles;
+    list<unique_ptr<Bullet>> enemyBullets;
     int height,width;
-    string  getNickName( const pair<int,int>& edit );
+    string  getNickName( const pair<int,int>& position );
     void    intro();
     void    scoreIncrease();
     void    moveBullets();
@@ -422,6 +419,7 @@ private:
     void    ask();
     bool    obstacleHitted( const pair<int,int> & c);
     bool    hitByEnemyBullet( const pair<int,int> & c );
+    void    bulletHitted( const pair<int,int> & c);
     void    writePlayer();
     void    saveObstacles();
     void    obstacleReader();
@@ -431,12 +429,47 @@ public:
     int lives;
     bool fromStart;
     bool    wannaContinue;
-            Level(int l, int s, int lc, int w, int h );
+            Level(int _lvl, int _score, int _lives, int _width, int _height );
             ~Level();
-    int     getScore() const{ return score; }
     void    play();
 
 };
+
+
+Level::Level(int _lvl, int _score, int _lives, int _width, int _height ): level(_lvl), wannaContinue(true), myBullet(nullptr), height(_height), width(_width), lives(_lives), score(_score), fromStart(false)
+{
+    win = newwin(height,width,0,0);
+    intro();
+    box(win,0,0);
+
+    enemyArmy = new EnemyArmy(win, 8, width,height-12);
+    spaceShip = new SpaceShip(width,height,win);
+
+    if ( level == 1 )
+        obstacleCreator();
+    else
+        obstacleReader();
+
+    mvwprintw(win,2,2,"SCORE: %d", score);
+    mvwprintw(win,height-1,2,"LIVES: %d", lives);
+    wrefresh(win);
+}
+
+
+Level::~Level(){
+    delete myBullet;
+    delete spaceShip;
+    delete enemyArmy;
+    enemyBullets.clear();
+    obstacles.clear();
+    delwin(win);
+}
+
+
+void Level::obstacleCreator(){
+    for ( int i = 5; i < width -10; i+= 15 )
+        obstacles.emplace_back(make_unique<Obstacle> (Obstacle(win,i,height-10) ));
+}
 
 
 void Level::intro() {
@@ -452,51 +485,21 @@ void Level::intro() {
 
     mvwprintw(win,height/2+10,width/2-12,"(press any key to start)");
     move(0,0);
+    box(win,0,0);
     wrefresh(win);
     getch();
     wclear(win);
     file.close();
 }
 
-Level::Level(int l, int s, int lc, int w, int h ):level(l),wannaContinue(true), myBullet(nullptr), height(h), width(w), lives(lc), score(s), fromStart(false)
-{
-    initscr();
-    win = newwin(height,width,0,0);
-    refresh();
-    box(win,0,0);
-    intro();
-    box(win,0,0);
-
-    enemyArmy = new EnemyArmy(win, 1, width);
-    spaceShip = new SpaceShip(width,height,win);
-
-    if ( level == 1 )
-        obstacleCreator();
-    else
-        obstacleReader();
-
-     mvwprintw(win,2,2,"SCORE: %d", score);
-    mvwprintw(win,height-1,2,"LIVES: %d", lives);
-    wrefresh(win);
-    refresh();
+void myCleaner(){
+    nodelay(stdscr, TRUE);
+    char m;
+    while ( (m = getch()) != ERR )
+        continue;
+    nodelay(stdscr, FALSE);
 }
 
-
-Level::~Level(){
-    delete myBullet;
-    delete spaceShip;
-    delete enemyArmy;
-    enemyBullets.clear();
-    int pocet = obstacles.size();
-    for ( int i = 0; i < pocet ; i++)
-        delete obstacles[i];
-}
-
-
-void Level::obstacleCreator(){
-    for ( int i = 5; i < width -10; i+= 15 )
-        obstacles.push_back(new Obstacle(win,i,height-10) );
-}
 void Level::obstacleReader() {
     ifstream file;
     file.open("obstacles.txt");
@@ -506,9 +509,8 @@ void Level::obstacleReader() {
         vector<pair<int,int>> allCords;
         while ( file >> obstacleCoords.first and file >> obstacleCoords.second )
             allCords.push_back(obstacleCoords);
-        obstacles.push_back(new Obstacle(win,allCords));
+        obstacles.emplace_back(make_unique<Obstacle>( Obstacle(win,allCords)));
     }
-
 
     file.close();
 
@@ -519,75 +521,72 @@ vector<pair<string,int>> getPlayers(int score){
     file.open("top_five.txt");
     string nickname;
     int best_score;
-    vector<pair<string, int>> topky;
+    vector<pair<string, int>> topPlayers;
     while ( file >> nickname && file >> best_score )
-        topky.emplace_back( nickname, best_score );
-    pair<string, int> newone("",score);
-    sort(topky.begin(), topky.end(), [](const pair<string,int>&a, const pair<string,int>&b )
-    { return a.second > b.second; } );
-    auto i = lower_bound(topky.begin(), topky.end(),newone, [](const pair<string,int>&a, const pair<string,int>&b )
-    { return a.second > b.second; } );
+        topPlayers.emplace_back( nickname, best_score );
 
-    topky.insert(i, newone);
+    pair<string, int> newone("",score);
+
+    sort(topPlayers.begin(), topPlayers.end(),
+         [](const pair<string,int>&a, const pair<string,int>&b )
+                    { return a.second > b.second; } );
+
+    auto i = lower_bound(topPlayers.begin(), topPlayers.end(), newone,
+                         [](const pair<string,int>&a, const pair<string,int>&b )
+                                { return a.second > b.second; } );
+
+    topPlayers.insert(i, newone);
     file.close();
-    return topky;
+    return topPlayers;
 }
 
 
-void writeToFile( vector<pair<string,int>> & topky ){
+void writeToFile( vector<pair<string,int>> & topPlayers ){
     ofstream file;
     file.open("top_five.txt");
-    for ( int j = 0; j < topky.size() and j < 5 ; j++ )
-        file << topky[j].first << " " << topky[j].second << endl;
+    for (int j = 0; j < topPlayers.size() and j < 5 ; j++ )
+        file << topPlayers[j].first << " " << topPlayers[j].second << endl;
     file.close();
 }
 
 
 
-void myCleaner(){
-    char m;
-    while ( (m = getch()) != ERR)
-        m = 'q';
-}
 
-string Level::getNickName( const pair<int,int>& edit ){
-    //myCleaner();
-    echo();
-    nodelay(stdscr, FALSE);
+string Level::getNickName( const pair<int,int>& position ){
     mvwprintw(win,height/2-2,width/2-19,"Enter your nickname(10 characters max)");
-    move(edit.second,edit.first);
+    move(position.second, position.first);
     wrefresh(win);
+    myCleaner();
+    echo();
     char a ;
     string playerNick;
     do{
         a = getch();
         playerNick += a;
-    }while( (a != '\n' or playerNick.size()==1) and playerNick.size()<=10 );
+    } while( ( a != '\n' or playerNick.size()==1) and playerNick.size()<=10 );
     playerNick.pop_back();
     noecho();
     return playerNick;
 }
 
 void Level::writePlayer() {
-    vector<pair<string, int>> topky = getPlayers(score);
+    vector<pair<string, int>> topPlayers = getPlayers(score);
     int index = -1;
-    pair<int,int> edit(-1,-1);
-    for ( int j = 0; j < topky.size() and j < 5 ; j++ ){
-        mvwprintw(win,height/2+j,width/2-5,"%d    %s",topky[j].second, topky[j].first.c_str() );
-        if ( topky[j].second == score and topky[j].first.empty() ){
-            edit = make_pair(width/2-1+int(log10(score) + 1),height/2+j );
+    pair<int,int> position(-1, -1); //position of
+
+    for (int j = 0; j < topPlayers.size() and j < 5 ; j++ ){
+        mvwprintw(win,height/2+j,width/2-5, "%d    %s", topPlayers[j].second, topPlayers[j].first.c_str() );
+        if (topPlayers[j].second == score and topPlayers[j].first.empty() ){
+            position = make_pair(width / 2 - 1 + int(log10(score) + 1), height / 2 + j );
             index = j;
         }
     }
-    if ( index == -1 ){
-        wclear( win );
-        box(win,0,0);
-        wrefresh(win);
-        return;
+
+    if ( index != -1 ){
+        topPlayers[index].first = getNickName(position);
+        writeToFile(topPlayers);
     }
 
-    topky[index].first = getNickName(edit);
-    writeToFile(topky);
     wclear( win );
     box(win,0,0);
     wrefresh(win);
@@ -598,10 +597,11 @@ void Level::ask(){
     wclear(win);
     box(win,0,0);
     mvwprintw( win, height/2-5, width/2-4,"GAME OVER");
-    writePlayer();
+    if ( score > 0 )
+        writePlayer();
     mvwprintw( win, height/2 , width/2-12,"press 'Y' to play again");
-    //myCleaner();
-    nodelay(stdscr, FALSE);
+    myCleaner();
+
     wrefresh(win);
     if ( getch() != 'y' )
         wannaContinue = false;
@@ -623,18 +623,18 @@ void Level::playerDied(){
     spaceShip->showMe();
     mvwprintw(win,height-1,2,"LIVES: %d", lives);
     enemyBullets.clear();
+    delete myBullet;
+    myBullet = nullptr;
     wrefresh(win);
 }
 
 
 bool    Level::obstacleHitted( const pair<int,int> & c){
 
-    for ( int i = 0; i < obstacles.size() ; i++ )
-        if ( obstacles[i]->contains(c) ){
-            if ( obstacles[i]->getDamage(c) ){
-                delete obstacles[i];
-                obstacles.erase(obstacles.begin()+i);
-            }
+    for ( auto i = obstacles.begin() ; i !=  obstacles.end() ; i++ )
+        if ( (*i)->contains(c) ){
+            if ( (*i)->getDamage(c) )
+                obstacles.erase(i);
             return false;
         }
     return true;
@@ -647,19 +647,28 @@ void Level::scoreIncrease() {
     wrefresh(win);
 }
 
+void Level::bulletHitted(const pair<int,int> & c){
+    for ( auto i = enemyBullets.begin(); i != enemyBullets.end(); i++ )
+        if ( (*i)->contains(c) ){
+            enemyBullets.erase(i);
+            return;
+        }
+}
 
 
 void Level::hitByMyBullet(){
 
     pair<int,int> colision = make_pair( myBullet->getCoords().first,myBullet->getCoords().second-1 );
 
-    obstacleHitted( colision );
+    obstacleHitted(colision);
+    bulletHitted(colision);
     if ( enemyArmy->killEnemy( colision ))
         scoreIncrease();
 
     delete myBullet;
     myBullet = nullptr;
 }
+
 
 bool Level::hitByEnemyBullet( const pair<int,int> & c ){
     if ( spaceShip->contains(make_pair(c.first,c.second+1)) )
@@ -673,7 +682,7 @@ void Level::moveBullets() {
     if ( myBullet && ! myBullet->move() )
         hitByMyBullet();
 
-    for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )        //----------------nedokonane------------------------------
+    for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )
         if ( !(*enemyBullet)->move() ){
             if ( hitByEnemyBullet((*enemyBullet)->getCoords() ) )
                 playerDied();
@@ -682,6 +691,8 @@ void Level::moveBullets() {
             return;
         }
 }
+
+
 void Level::saveObstacles(){
     ofstream file;
     file.open("obstacles.txt");
@@ -698,7 +709,6 @@ void Level::play(){
     noecho();
     nodelay(stdscr, TRUE);
     int shootFrequency = 45 - level * 5 ;
-
 
     while ( enemyArmy->isAlive() and spaceShip != nullptr ){
         char a;
@@ -743,19 +753,19 @@ int main(){
 
     bool wantContinue = true;
     int level = 0;
-    int score = 500;
-    int livesCount = 1;
-    int width = 65;
-    int height = 30;
-
+    int score = 0;
+    int livesCount = 3;
+    int width = 95;
+    int height = 34;
+    initscr();
+    refresh();
     while ( wantContinue ){
         Level * lvl = new Level(++level, score, livesCount, width, height);
         lvl->play();
         wantContinue = lvl->wannaContinue;
-        endwin();
         if ( lvl->fromStart ){
             score = 0;
-            livesCount = 1;
+            livesCount = 3;
             level = 0;
         }
         else{
@@ -765,6 +775,6 @@ int main(){
         }
         delete lvl;
     }
-
+    endwin();
     return 0;
 }
