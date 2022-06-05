@@ -1,3 +1,5 @@
+//can not kill me
+
 #include <ncurses.h>
 #include <iostream>
 #include <unistd.h>
@@ -78,7 +80,7 @@ public:
 
 bool Bullet::canMove(int x, int y) {
     char daco = chtype mvwinch( win, y, x);
-    if (  daco == 'X' && ! direction  )   // no hitting bullet or enemy by enemy
+    if (  daco == 'X' && ! direction  )   // no hitting enemy by enemy
         return true;
     return daco == ' ';
 }
@@ -423,6 +425,7 @@ public:
     void    obstacleHitted( const pair<int,int> & c);
     bool    checkBarier( Bullet * b);
     bool    ask();
+    bool    hitByEnemyBullet( const pair<int,int> & c );
 };
 
 
@@ -556,8 +559,14 @@ bool Level::checkBarier( Bullet * b){
 
 void Level::hitByMyBullet(){
 
-    char hittedObject = myBullet->bulletHit();
+    //char hittedObject = myBullet->bulletHit();
     pair<int,int> colision = make_pair( myBullet->getCoords().first,myBullet->getCoords().second-1 );
+
+    obstacleHitted( colision );
+    enemyArmy->killEnemy( colision );
+    scoreIncrease();
+
+    /*
     mvwprintw(win,1,1,"%d   %d  %c", colision.first, colision.second, hittedObject);
     wrefresh(win);
 
@@ -571,9 +580,18 @@ void Level::hitByMyBullet(){
         wrefresh(win);
         obstacleHitted( colision );
     }
-
+*/
     delete myBullet;
     myBullet = nullptr;
+}
+
+bool Level::hitByEnemyBullet( const pair<int,int> & c ){
+    if ( spaceShip->contains(make_pair(c.first,c.second-1)) )
+        return true;
+    obstacleHitted(make_pair(c.first,c.second+1));
+    return false;
+
+
 }
 
 
@@ -583,7 +601,7 @@ void Level::moveBullets() {
 
     for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )        //----------------nedokonane------------------------------
         if ( !(*enemyBullet)->move() ){
-            if ( (*enemyBullet)->getCoords().second+2 < height )
+            if ( hitByEnemyBullet((*enemyBullet)->getCoords() ) )
                 died();
             else
                 enemyBullets.erase(enemyBullet);
@@ -613,12 +631,12 @@ void Level::play(){
                 default: break;
             }
         }
-/*
+
         if ( ! shoot-- ){
             enemyBullets.emplace_back(enemyArmy->enemyFire());
             shoot = 40;
         }
-*/
+
         enemyArmy->moveArmy();
         moveBullets();
 
