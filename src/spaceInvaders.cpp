@@ -43,25 +43,32 @@ public:
         mvwprintw( win, y, x, "|" );
     }
     ~Bullet(){
-        mvwprintw( win, y+1, x, " " );
+        //mvwprintw( win, y+1, x, " " );
         mvwprintw( win, y, x, " " );
         wrefresh(win);
     }
     pair<int,int> getCoords(){ return make_pair(x,y-1); }
+
     bool canMove(int x, int y) override {
         char daco = chtype mvwinch( win, y, x);
-        if ( daco == 'X' && direction )             // looking for enemy
+        if ( daco == 'X' && ! direction )             // looking for enemy
+            return true;
+        return daco == ' ';
+        /*
+        if ( daco == '-' )
             return false;
-        else if ( daco == 'o' && !direction )      // looking for myShip
+        else if ( daco == 'o' && !direction )       // looking for myShip
             return false;
         if ( y <= 1 || y >= 100)
             return false;
         return true;
+         */
     }
     bool move();
 };
 
 bool Bullet::move(){
+
     if ( direction && canMove( x, --y ) ){
         mvwprintw(win,y,x,"|");
         mvwprintw(win,y+1,x," ");
@@ -74,6 +81,7 @@ bool Bullet::move(){
         wrefresh(win);
         return true;
     }
+
     return false;
 }
 
@@ -105,8 +113,8 @@ public:
         wrefresh(win);
     }
     bool canMove(int x, int y) override{
-        if ( x <= 0 || x + 4 >= 100)
-            return false;
+        //if ( x <= 0 || x + 4 >= 100)
+          //  return false;
         return true;
     }
     bool contains( pair<int,int> & c) override;
@@ -191,11 +199,12 @@ private:
     int leftEdge;
     int rightEdge;
     int bounceCount;
+    int width;
 public:
 
-    EnemyArmy( WINDOW * win, int count ):bounceCount(0),direction(true){
+    EnemyArmy( WINDOW * win, int count , int w ):bounceCount(0),direction(true),width(w){
         for ( int i = 1 ; i < count+1 ; i++ )
-            for ( int j = 0 ; j < 15 ; j+=3 )
+            for ( int j = 0 ; j < 6 ; j+=3 )
                 enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 10 ));
 
         leftEdge = 15;
@@ -219,7 +228,7 @@ Bullet * EnemyArmy::enemyFire() const {
 
 
 void EnemyArmy::checkChange() {
-    if ( rightEdge >= 100){
+    if ( rightEdge >= width ){
         direction = false;
         bounceCount++;
     }
@@ -363,7 +372,7 @@ private:
     void intro();
 public:
     bool wannaContinue;
-    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(50), width(100), lives(3)
+    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(30), width(70), lives(3)
     {
         score = s;
         initscr();
@@ -372,7 +381,7 @@ public:
         box(win,0,0);
         intro();
         box(win,0,0);
-        enemyArmy = new EnemyArmy(win, 10);
+        enemyArmy = new EnemyArmy(win, 3, width);
         spaceShip = new SpaceShip(width,height,win);
         mvwprintw(win,2,2,"SCORE: %d", score);
 
@@ -391,7 +400,24 @@ public:
     void moveBullets();
     void died();
     void blik();
+    bool ask();
+    bool checkBarier( Bullet * b);
 };
+
+bool Level::ask(){
+    wclear(win);
+    box(win,0,0);
+    mvwprintw( win, height/2, width/2-4,"GAME OVER");
+    mvwprintw( win, height/2 + 2, width/2-15,"If you want continue press 'A', otherwise press any key ");
+
+
+
+    wrefresh(win);
+    return false;
+}
+
+
+
 
 void Level::blik(){
     for( int i = 0; i < 3 ; i++ ){
@@ -409,6 +435,7 @@ void Level::died(){
     delete spaceShip;
     spaceShip = nullptr;
     if ( ! --lives ){
+        return;
         // konec volaaky, otazka pokracovania
     }
     //blik();
@@ -449,50 +476,71 @@ void Level::scoreIncrease() {
     wrefresh(win);
 }
 
+bool Level::checkBarier( Bullet * b){
+
+    if ( b->getCoords().second <= 1 || b->getCoords().second >= height )
+        return true;
+    return false;
+}
+
+
 void Level::moveBullets() {
     if ( myBullet )
         if ( ! myBullet->move() ){
-            enemyArmy->killEnemy( myBullet->getCoords() );
+            if ( checkBarier(myBullet) ){
+                delete myBullet;
+                myBullet = nullptr;
+                return;
+            }
             scoreIncrease();
+            enemyArmy->killEnemy( myBullet->getCoords() );
             delete myBullet;
             myBullet = nullptr;
         }
-
+/*
     for (auto & enemyBullet : enemyBullets){        //----------------nedokonane------------------------------
         if ( !enemyBullet->move() ){
+            if (checkBarier())
+                return;
             died();
             return;
         }
     }
+    */
 }
 
 void Level::play(){
 
     noecho();
     nodelay(stdscr, TRUE);
-    int shoot = 20;
+    int shoot = 40;
 
     while ( enemyArmy->isAlive() && spaceShip != nullptr ){
-        char a  ;
-        if ( ( a = getch()) == ERR )
-            a = 'q' ;
-        if ( a == 'a' )
-            spaceShip->moveLeft();
-        else if ( a == 'd' )
-            spaceShip->moveRight();
-        else if ( a == 'm' && myBullet == nullptr )
-            myBullet = spaceShip->shoot();
-
-        moveBullets();
-        enemyArmy->moveArmy();
+        char a = 'q' ;
+        if ( ( a = getch() ) != ERR ){
+            switch (a) {
+                case 'a': spaceShip->moveLeft(); break;
+                case 'd': spaceShip->moveRight(); break;
+                case 'm':{
+                    if ( myBullet == nullptr )
+                        myBullet = spaceShip->shoot();
+                } break;
+                default: break;
+            }
+        }
 
         if ( ! shoot-- ){
             enemyBullets.emplace_back(enemyArmy->enemyFire());
-            shoot = 10;
+            shoot = 40;
         }
+
+        enemyArmy->moveArmy();
+        moveBullets();
 
         usleep(100000);
     }
+    if ( spaceShip == nullptr )
+        ask();
 
 }
 
@@ -504,10 +552,12 @@ int main() {
     int i = 0;
     bool wantContinue = true;
     int score = 0;
-    while (wantContinue)
+    while ( wantContinue )
     {
         Level * lvl = new Level(++i, score);
         lvl->play();
+
+
         wantContinue = lvl->wannaContinue;
         endwin();
         score = lvl->getScore();
