@@ -47,7 +47,7 @@ public:
         mvwprintw( win, y, x, " " );
         wrefresh(win);
     }
-    pair<int,int> getCoords(){ return make_pair(x,y-1); }
+    pair<int,int> getCoords(){ return make_pair(x,y); }
 
     bool canMove(int x, int y) override {
         char daco = chtype mvwinch( win, y, x);
@@ -68,7 +68,7 @@ public:
 };
 
 bool Bullet::move(){
-
+    int old_y = y;
     if ( direction && canMove( x, --y ) ){
         mvwprintw(win,y,x,"|");
         mvwprintw(win,y+1,x," ");
@@ -81,7 +81,7 @@ bool Bullet::move(){
         wrefresh(win);
         return true;
     }
-
+    y = old_y;
     return false;
 }
 
@@ -366,13 +366,13 @@ private:
     Bullet  * myBullet;
     EnemyArmy * enemyArmy;
     WINDOW  * win;
-    list<unique_ptr<Bullet>> enemyBullets;
+    list<shared_ptr<Bullet>> enemyBullets;
     int height,width;
     int lives;
     void intro();
 public:
     bool wannaContinue;
-    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(30), width(70), lives(3)
+    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(30), width(70), lives(1)
     {
         score = s;
         initscr();
@@ -408,10 +408,14 @@ bool Level::ask(){
     wclear(win);
     box(win,0,0);
     mvwprintw( win, height/2, width/2-4,"GAME OVER");
-    mvwprintw( win, height/2 + 2, width/2-15,"If you want continue press 'A', otherwise press any key ");
+    mvwprintw( win, height/2 + 2, width/2-15,"If you want continue press 'Y'");
+    nodelay(stdscr, FALSE);
+    wrefresh(win);
+    char a = getch();
+    if ( a != 'y' )
+        wannaContinue = false;
 
-
-
+    wclear(win);
     wrefresh(win);
     return false;
 }
@@ -432,6 +436,7 @@ void Level::blik(){
 };
 
 void Level::died(){
+    sleep(2);
     delete spaceShip;
     spaceShip = nullptr;
     if ( ! --lives ){
@@ -445,7 +450,7 @@ void Level::died(){
     mvwprintw(win,height-1,2,"LIVES: %d", lives);
     enemyBullets.clear();
     wrefresh(win);
-    refresh();
+
 }
 
 
@@ -497,16 +502,17 @@ void Level::moveBullets() {
             delete myBullet;
             myBullet = nullptr;
         }
-/*
-    for (auto & enemyBullet : enemyBullets){        //----------------nedokonane------------------------------
-        if ( !enemyBullet->move() ){
-            if (checkBarier())
-                return;
-            died();
+
+    for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )        //----------------nedokonane------------------------------
+        if ( !(*enemyBullet)->move() ){
+            if ( (*enemyBullet)->getCoords().second+2 < height )
+                died();
+            else
+                enemyBullets.erase(enemyBullet);
             return;
         }
-    }
-    */
+
+
 }
 
 void Level::play(){
@@ -521,7 +527,7 @@ void Level::play(){
             switch (a) {
                 case 'a': spaceShip->moveLeft(); break;
                 case 'd': spaceShip->moveRight(); break;
-                case 'm':{
+                case ' ':{
                     if ( myBullet == nullptr )
                         myBullet = spaceShip->shoot();
                 } break;
