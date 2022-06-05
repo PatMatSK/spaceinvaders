@@ -4,9 +4,8 @@
 #include <ctype.h>
 #include <time.h>
 #include <vector>
-
-
-#define TIMEOUT 5
+#include <Carbon/Carbon.h>
+#include <list>
 
 using namespace std;
 
@@ -21,7 +20,7 @@ public:
     Object(WINDOW * w){
         win = w;
     }
-    //virtual void gotHit() ;
+    virtual void Hit() {}
     virtual bool canMove(int x, int y){return false;}
     virtual void move( bool direction ){}
 
@@ -42,7 +41,10 @@ public:
     }
     ~Bullet(){
         mvwprintw( win, y+1, x, " " );
+        mvwprintw( win, y, x, " " );
+        wrefresh(win);
     }
+    pair<int,int> getCoords(){ return make_pair(x,y-1); }
     bool canMove(int x, int y) override {
         char daco = chtype mvwinch( win, y, x);
         if ( daco != ' ' )
@@ -51,21 +53,17 @@ public:
     }
     bool move ()
     {
-        if ( direction ){
-            if  ( canMove( x, --y ) ){
-                mvwprintw(win,y,x,"|");
-                mvwprintw(win,y+1,x," ");
-                wrefresh(win);
-                return true;
-            }
+        if ( direction && canMove( x, --y ) ){
+            mvwprintw(win,y,x,"|");
+            mvwprintw(win,y+1,x," ");
+            wrefresh(win);
+            return true;
         }
-        else{
-            if  ( canMove( x, ++y ) ){
-                mvwprintw(win,y,x,"|");
-                mvwprintw(win,y-1,x," ");
-                wrefresh(win);
-                return true;
-            }
+        else if ( canMove( x, ++y ) ){
+            mvwprintw(win,y,x,"|");
+            mvwprintw(win,y-1,x," ");
+            wrefresh(win);
+            return true;
         }
         return false;
     }
@@ -90,14 +88,25 @@ public:
         coords.emplace_back(x+2,y+1);
         showEnemy();
     }
+    ~Enemy(){
+        for ( const auto & i: coords )
+            mvwprintw(win,i.second,i.first," ");
+        wrefresh(win);
+    }
     void showEnemy(){
         for ( const auto & i: coords )
             mvwprintw(win,i.second,i.first,"X");
+        wrefresh(win);
     }
     bool canMove(int x, int y) override{
         if ( x <= 0 || x + 4 >= 100)
             return false;
         return true;
+    }
+    bool contains( pair<int,int> & c){
+        if ( count(coords.begin(), coords.end(), c) )
+            return true;
+        return false;
     }
     void move( bool direction ) override {
 
@@ -124,8 +133,7 @@ public:
 void Enemy::moveLeft() {
     for ( auto & i : coords)
         i.first--;
-    //for ( auto  i : coords)
-      //  i.first--;
+
 
     mvwprintw(win,coords[2].second,coords[2].first+1," ");
     mvwprintw(win,coords[3].second,coords[3].first+1," ");
@@ -137,8 +145,7 @@ void Enemy::moveLeft() {
 void Enemy::moveRight() {
     for ( auto & i : coords)
         i.first++;
-    //for ( auto  i : coords)
-      //  i.first++;
+
     mvwprintw(win,coords[0].second,coords[0].first-1," ");
     mvwprintw(win,coords[3].second,coords[3].first-1," ");
     mvwprintw(win,coords[4].second,coords[4].first-1," ");
@@ -152,7 +159,7 @@ void Enemy::moveRight() {
 
 class EnemyArmy{
 private:
-    vector<Enemy*> enemies;
+    list<unique_ptr<Enemy>> enemies;
     bool direction; // true == right, false == left
     int leftEdge;
     int rightEdge;
@@ -161,14 +168,15 @@ public:
     EnemyArmy( WINDOW * win, int count ){
         for ( int i = 1 ; i < count+1 ; i++ )
             for ( int j = 0 ; j < 15 ; j+=3 )
-                enemies.push_back(new Enemy( win,i*5 + 10, j + 10 ));
-        direction = true;
+                enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 10 ));
+        direction = has_colors() ;
         leftEdge = 15;
         rightEdge = 15 + count * 5;
         wrefresh( win );
     }
-    void moveArmy();
     bool isAlive(){ return !enemies.empty(); }
+    void moveArmy();
+    void killEnemy( pair<int,int> coords );
 
 };
 
@@ -188,6 +196,20 @@ void EnemyArmy::moveArmy() {
         leftEdge--;
         rightEdge--;
     }
+}
+
+
+void EnemyArmy::killEnemy( pair<int,int> coords ) {
+
+    for ( auto i = enemies.begin() ; i != enemies.end() ; i++ ){
+        if ( (*i)->contains(coords) ){
+            enemies.erase(i);
+            return;
+        }
+    }
+
+
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -296,14 +318,15 @@ public:
 };
 
 
+
 void Level::play(){
     noecho();
-
+    nodelay(stdscr, TRUE);
     while ( enemyArmy->isAlive() && spaceShip != nullptr )
     {
-
-        char a  = getch();
-
+        char a  ;
+        if ( ( a = getch()) == ERR )
+            a = 'q' ;
         if ( a == 'a' )
             spaceShip->moveLeft();
         else if ( a == 'd' )
@@ -314,11 +337,14 @@ void Level::play(){
 
         if ( myBullet )
             if ( ! myBullet->move() ){
+                enemyArmy->killEnemy( myBullet->getCoords() );
                 delete myBullet;
                 myBullet = nullptr;
             }
+
         enemyArmy->moveArmy();
 
+        usleep(100000);
     }
 }
 
