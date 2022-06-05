@@ -1,0 +1,5 @@
+fenomen 10000
+majster 2470
+sinter 675
+kondor 660
+tonko 590
