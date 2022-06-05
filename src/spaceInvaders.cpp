@@ -52,25 +52,24 @@ public:
             return false;
         return true;
     }
-    bool move ()
-    {
-        if ( direction && canMove( x, --y ) ){
-            mvwprintw(win,y,x,"|");
-            mvwprintw(win,y+1,x," ");
-            wrefresh(win);
-            return true;
-        }
-        else if ( canMove( x, ++y ) ){
-            mvwprintw(win,y,x,"|");
-            mvwprintw(win,y-1,x," ");
-            wrefresh(win);
-            return true;
-        }
-        return false;
-    }
+    bool move();
 };
 
-
+bool Bullet::move(){
+    if ( direction && canMove( x, --y ) ){
+        mvwprintw(win,y,x,"|");
+        mvwprintw(win,y+1,x," ");
+        wrefresh(win);
+        return true;
+    }
+    else if ( canMove( x, ++y ) ){
+        mvwprintw(win,y,x,"|");
+        mvwprintw(win,y-1,x," ");
+        wrefresh(win);
+        return true;
+    }
+    return false;
+}
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -128,9 +127,19 @@ public:
     }
     void moveLeft();
     void moveRight();
+    void getDown();
 
 
 };
+void Enemy::getDown() {
+    mvwprintw(win,coords[0].second,coords[0].first,"   ");
+    for ( auto & i : coords )
+        i.second++;
+    showEnemy();
+}
+
+
+
 void Enemy::moveLeft() {
     for ( auto & i : coords)
         i.first--;
@@ -164,13 +173,14 @@ private:
     bool direction; // true == right, false == left
     int leftEdge;
     int rightEdge;
+    int bounceCount;
 public:
 
-    EnemyArmy( WINDOW * win, int count ){
+    EnemyArmy( WINDOW * win, int count ):bounceCount(0),direction(true){
         for ( int i = 1 ; i < count+1 ; i++ )
             for ( int j = 0 ; j < 15 ; j+=3 )
                 enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 10 ));
-        direction = true;
+
         leftEdge = 15;
         rightEdge = 15 + count * 5;
         wrefresh( win );
@@ -178,17 +188,41 @@ public:
     bool isAlive(){ return !enemies.empty(); }
     void moveArmy();
     void killEnemy( pair<int,int> coords );
-
+    void getCloser();
+    void checkChange();
 };
 
-void EnemyArmy::moveArmy() {
-    if ( rightEdge >= 100)
+void EnemyArmy::checkChange() {
+    if ( rightEdge >= 100){
         direction = false;
-    if ( leftEdge <= 1 )
+        bounceCount++;
+    }
+    if ( leftEdge <= 1 ){
         direction = true;
+        bounceCount++;
+    }
+    if ( bounceCount == 3 ){
+        getCloser();
+        bounceCount = 0;
+    }
+
+
+}
+
+
+void EnemyArmy::getCloser() {
+    for ( auto & i : enemies )
+        i->getDown();
+}
+
+
+
+void EnemyArmy::moveArmy() {
+    checkChange();
 
     for ( auto & i : enemies )
         i->move(direction);
+
     if ( direction ){
         leftEdge++;
         rightEdge++;
@@ -208,9 +242,6 @@ void EnemyArmy::killEnemy( pair<int,int> coords ) {
             return;
         }
     }
-
-
-
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -352,8 +383,6 @@ void Level::scoreIncrease() {
     mvwprintw(win,2,2,"SCORE: %d", score);
     wrefresh(win);
 }
-
-
 
 
 void Level::play(){
