@@ -7,6 +7,9 @@
 #include <Carbon/Carbon.h>
 #include <list>
 #include <fstream>
+#include  <random>
+#include  <iterator>
+
 
 using namespace std;
 
@@ -21,10 +24,9 @@ public:
     Object(WINDOW * w){
         win = w;
     }
-    virtual void Hit() {}
     virtual bool canMove(int x, int y){return false;}
     virtual void move( bool direction ){}
-
+    virtual bool contains( pair<int,int> & c){return false;}
 };
 
 
@@ -48,7 +50,11 @@ public:
     pair<int,int> getCoords(){ return make_pair(x,y-1); }
     bool canMove(int x, int y) override {
         char daco = chtype mvwinch( win, y, x);
-        if ( daco != ' ' )
+        if ( daco == 'X' && direction )             // looking for enemy
+            return false;
+        else if ( daco == 'o' && !direction )      // looking for myShip
+            return false;
+        if ( y <= 1 || y >= 100)
             return false;
         return true;
     }
@@ -103,34 +109,45 @@ public:
             return false;
         return true;
     }
-    bool contains( pair<int,int> & c){
-        if ( count(coords.begin(), coords.end(), c) )
-            return true;
-        return false;
-    }
-    void move( bool direction ) override {
+    bool contains( pair<int,int> & c) override;
 
-        if ( direction ){
-            if ( !canMove(x+1,y) )
-                return;
-            moveRight();
-        }
-        else{
-            if ( !canMove(x-1,y) )
-                return;
-            moveLeft();
-        }
-
-        showEnemy();
-        wrefresh(win);
-
-    }
     void moveLeft();
     void moveRight();
     void getDown();
-
-
+    void move( bool direction ) override;
+    Bullet * shoot() const;
 };
+
+Bullet * Enemy::shoot() const {
+    return new Bullet(win,x+1,y+2,false);
+}
+
+
+bool Enemy::contains( pair<int,int> & c){
+    if ( count(coords.begin(), coords.end(), c) )
+        return true;
+    return false;
+}
+
+
+void Enemy::move( bool direction ) {
+
+    if ( direction ){
+        if ( !canMove(x+1,y) )
+            return;
+        moveRight();
+    }
+    else{
+        if ( !canMove(x-1,y) )
+            return;
+        moveLeft();
+    }
+
+    showEnemy();
+    wrefresh(win);
+
+}
+
 void Enemy::getDown() {
     mvwprintw(win,coords[0].second,coords[0].first,"   ");
     for ( auto & i : coords )
@@ -143,7 +160,7 @@ void Enemy::getDown() {
 void Enemy::moveLeft() {
     for ( auto & i : coords)
         i.first--;
-
+    x--;
 
     mvwprintw(win,coords[2].second,coords[2].first+1," ");
     mvwprintw(win,coords[3].second,coords[3].first+1," ");
@@ -155,7 +172,7 @@ void Enemy::moveLeft() {
 void Enemy::moveRight() {
     for ( auto & i : coords)
         i.first++;
-
+    x++;
     mvwprintw(win,coords[0].second,coords[0].first-1," ");
     mvwprintw(win,coords[3].second,coords[3].first-1," ");
     mvwprintw(win,coords[4].second,coords[4].first-1," ");
@@ -190,7 +207,16 @@ public:
     void killEnemy( pair<int,int> coords );
     void getCloser();
     void checkChange();
+    Bullet *  enemyFire() const ;
 };
+
+Bullet * EnemyArmy::enemyFire() const {
+    auto it = enemies.cbegin();
+    int random = rand() % enemies.size();
+    advance(it, random);
+    return (*it)->shoot();
+}
+
 
 void EnemyArmy::checkChange() {
     if ( rightEdge >= 100){
@@ -327,11 +353,13 @@ private:
     Bullet  * myBullet;
     EnemyArmy * enemyArmy;
     WINDOW  * win;
+    list<Bullet*> enemyBullets;
     int height,width;
+    int lives;
     void intro();
 public:
     bool wannaContinue;
-    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(50), width(100)
+    Level(int l, int s ):level(l),wannaContinue(true), myBullet(nullptr), height(50), width(100), lives(3)
     {
         score = s;
         initscr();
@@ -343,6 +371,8 @@ public:
         enemyArmy = new EnemyArmy(win, 10);
         spaceShip = new SpaceShip(width,height,win);
         mvwprintw(win,2,2,"SCORE: %d", score);
+
+        mvwprintw(win,height-1,2,"LIVES: %d", lives);
         wrefresh(win);
         refresh();
     }
@@ -354,7 +384,9 @@ public:
     void play();
     int getScore(){ return score; }
     void scoreIncrease();
+    void moveBullets();
 };
+
 
 
 void Level::intro() {
@@ -384,12 +416,30 @@ void Level::scoreIncrease() {
     wrefresh(win);
 }
 
+void Level::moveBullets() {
+    if ( myBullet )
+        if ( ! myBullet->move() ){
+            enemyArmy->killEnemy( myBullet->getCoords() );
+            scoreIncrease();
+            delete myBullet;
+            myBullet = nullptr;
+        }
+    for ( auto i  = enemyBullets.begin(); i != enemyBullets.end(); i++){        //----------------nedokonane------------------------------
+        if ( !(*i)->move() ){
+            delete spaceShip;
+            if ( --lives ){
+                spaceShip = new SpaceShip(width,height,win);
+                mvwprintw(win,height-1,2,"LIVES: %d", lives);
+            }
+        }
+    }
+}
 
 void Level::play(){
 
     noecho();
     nodelay(stdscr, TRUE);
-
+    int shoot = 20;
     while ( enemyArmy->isAlive() && spaceShip != nullptr )
     {
         char a  ;
@@ -402,17 +452,13 @@ void Level::play(){
         else if ( a == 'm' && myBullet == nullptr )
             myBullet = spaceShip->shoot();
 
-
-        if ( myBullet )
-            if ( ! myBullet->move() ){
-                enemyArmy->killEnemy( myBullet->getCoords() );
-                scoreIncrease();
-                delete myBullet;
-                myBullet = nullptr;
-            }
-
+        moveBullets();
         enemyArmy->moveArmy();
 
+        if ( ! shoot-- ){
+            enemyBullets.emplace_back(enemyArmy->enemyFire());
+            shoot = 10;
+        }
         usleep(100000);
     }
 
