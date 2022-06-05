@@ -8,7 +8,8 @@
 #include <fstream>
 #include  <random>
 #include  <iterator>
-
+#include <memory>
+#include <algorithm>
 
 using namespace std;
 
@@ -100,11 +101,14 @@ bool Bullet::move(){
 //--------------------------------------------------------------------------------------------------
 
 class Obstacle: public Object{
+private:
+    vector<pair<int,int>> origin;
 public:
             Obstacle(WINDOW * w, int a, int b);
             Obstacle(WINDOW * w, vector<pair<int,int>> v);
     bool    getDamage( const pair<int,int> & c);
     void    writeCoords( ofstream & file);
+    void    repair();
 };
 Obstacle::Obstacle(WINDOW *w, vector<pair<int, int>> v): Object(w,"Q") {
     coords = std::move(v);
@@ -122,6 +126,7 @@ Obstacle::Obstacle(WINDOW *w, int a, int b): Object(w,"Q") {
         coords.emplace_back(a+i,b-1);
         coords.emplace_back(a+i,b-2);
     }
+    origin = coords;
     showMe();
 }
 
@@ -138,6 +143,10 @@ void Obstacle::writeCoords(ofstream &file) {
     file << endl;
 }
 
+void Obstacle::repair() {
+    coords = origin;
+    showMe();
+}
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
@@ -235,7 +244,7 @@ private:
     int width;
 public:
     int downLimit;  // donw limit influenced by obstacles and spaceship
-
+    bool ableToMove;
                         EnemyArmy( WINDOW * win, int count , int _width, int _limit );
                         ~EnemyArmy();
     bool                isAlive(){ return !enemies.empty(); }
@@ -246,11 +255,11 @@ public:
     unique_ptr<Bullet>  enemyFire() const ;
 };
 
-EnemyArmy::EnemyArmy(WINDOW *win, int count, int _width, int _limit):bounceCount(0),direction(true),width(_width),downLimit(_limit){
+EnemyArmy::EnemyArmy(WINDOW *win, int count, int _width, int _limit):bounceCount(0),direction(true),width(_width),downLimit(_limit),ableToMove(true){
     for ( int i = 1 ; i < count+1 ; i++ )
-        for ( int j = 0 ; j < 12 ; j+=3 )
+        for ( int j = 0 ; j < 6 ; j+=3 )
             enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 5 ));
-    downEdge = 18;  // limit for one row is 6, add 4 for every next row
+    downEdge = 10;  // limit for one row is 6, add 4 for every next row
     leftEdge = 15;
     rightEdge = 15 + count * 5;
     wrefresh( win );
@@ -293,6 +302,8 @@ void EnemyArmy::getCloser() {
 
 
 void EnemyArmy::moveArmy() {
+    if ( ! ableToMove )
+        return;
     checkChange();
 
     for ( auto & i : enemies )
@@ -319,23 +330,27 @@ bool EnemyArmy::killEnemy( pair<int,int> coords ) {
     return false;
 }
 
+
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 class SpaceShip : public Object {
 private:
     int width;
 public:
+    bool shield;
                         SpaceShip( int a, int b, WINDOW * w );
                         ~SpaceShip();
     bool                canMove( int x, int y ) override;
     void                moveLeft();
     void                moveRight();
     Bullet *            shoot();
+    void                activateShield();
+    void                deactivateShield();
 };
 
 
 
-SpaceShip::SpaceShip( int a, int b, WINDOW * w ): Object(w,"O"),width(a){
+SpaceShip::SpaceShip( int a, int b, WINDOW * w ): Object(w,"o"),width(a),shield(false){
     x = a/2 - 5;
     y = b - 4;
     for ( int i = 0; i < 9; i++ ){
@@ -394,6 +409,18 @@ void SpaceShip::moveLeft(){
     wrefresh(win);
 }
 
+void SpaceShip::activateShield() {
+    me = "O";
+    shield = true;
+    showMe();
+}
+
+void SpaceShip::deactivateShield() {
+    me = "o";
+    shield = false;
+    showMe();
+}
+
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 
@@ -409,20 +436,24 @@ private:
     list<unique_ptr<Obstacle>> obstacles;
     list<unique_ptr<Bullet>> enemyBullets;
     int height,width;
-    string  getNickName( const pair<int,int>& position );
-    void    intro();
-    void    scoreIncrease();
-    void    moveBullets();
-    void    playerDied();
-    void    obstacleCreator();
-    void    hitByMyBullet();
-    void    ask();
-    bool    obstacleHitted( const pair<int,int> & c);
-    bool    hitByEnemyBullet( const pair<int,int> & c );
-    void    bulletHitted( const pair<int,int> & c);
-    void    writePlayer();
-    void    saveObstacles();
-    void    obstacleReader();
+    string  getNickName         ( const pair<int,int>& position );
+    void    intro               ();
+    void    scoreIncrease       ();
+    void    playerDied          ();
+    void    obstacleCreator     ();
+    void    hitByMyBullet       ();
+    void    ask                 ();
+    bool    obstacleHitted      ( const pair<int,int> & c);
+    bool    hitByEnemyBullet    ( const pair<int,int> & c );
+    void    bulletHitted        ( const pair<int,int> & c);
+    void    writePlayer         ();
+    void    saveObstacles       ();
+    void    obstacleReader      ();
+    void    moveBullets         ();
+    void    moveSpaceship       ();
+    void    bonusCheck          ();
+    void    makeBonus           ();
+    void    repairObstacles     ();
 public:
     int level;
     int score;
@@ -442,7 +473,7 @@ Level::Level(int _lvl, int _score, int _lives, int _width, int _height ): level(
     intro();
     box(win,0,0);
 
-    enemyArmy = new EnemyArmy(win, 8, width,height-12);
+    enemyArmy = new EnemyArmy(win, 4, width,height-12);
     spaceShip = new SpaceShip(width,height,win);
 
     if ( level == 1 )
@@ -613,9 +644,15 @@ void Level::ask(){
 
 
 void Level::playerDied(){
+    if ( spaceShip->shield ){
+        spaceShip->deactivateShield();
+        enemyBullets.clear();
+        return;
+    }
     sleep(2);
     delete spaceShip;
     spaceShip = nullptr;
+
     if ( ! --lives )
         return;
 
@@ -655,6 +692,29 @@ void Level::bulletHitted(const pair<int,int> & c){
         }
 }
 
+void Level::repairObstacles()
+{
+    for ( const auto & i : obstacles )
+        i->repair();
+}
+
+void Level::bonusCheck()
+{
+    int i = rand() % 100;
+    if ( i < 30 )
+        makeBonus();
+}
+
+void Level::makeBonus()
+{
+    int i = rand() % 3;
+    switch (i)
+    {
+        case 0:     spaceShip->activateShield();    break;
+        case 1:     enemyArmy->ableToMove = false;  break;
+        default:    repairObstacles();              break;
+    }
+}
 
 void Level::hitByMyBullet(){
 
@@ -662,8 +722,10 @@ void Level::hitByMyBullet(){
 
     obstacleHitted(colision);
     bulletHitted(colision);
-    if ( enemyArmy->killEnemy( colision ))
+    if ( enemyArmy->killEnemy( colision )){
         scoreIncrease();
+        bonusCheck();
+    }
 
     delete myBullet;
     myBullet = nullptr;
@@ -703,34 +765,46 @@ void Level::saveObstacles(){
     file.close();
 }
 
+void Level::moveSpaceship(){
+    char a;
+    if ( ( a = getch() ) != ERR ){
+        switch (a) {
+            case 'a': spaceShip->moveLeft(); break;
+            case 'd': spaceShip->moveRight(); break;
+            case ' ':
+            {
+                if ( myBullet == nullptr )
+                    myBullet = spaceShip->shoot();
+            } break;
+            default: break;
+        }
+    }
+}
 
-void Level::play(){
-
+void Level::play()
+{
     noecho();
     nodelay(stdscr, TRUE);
-    int shootFrequency = 45 - level * 5 ;
-
-    while ( enemyArmy->isAlive() and spaceShip != nullptr ){
-        char a;
-        if ( ( a = getch() ) != ERR ){
-            switch (a) {
-                case 'a': spaceShip->moveLeft(); break;
-                case 'd': spaceShip->moveRight(); break;
-                case ' ':
-                {
-                    if ( myBullet == nullptr )
-                        myBullet = spaceShip->shoot();
-                } break;
-                default: break;
-            }
-        }
+    int shootFrequency = max( 45 - level * 5, 10 ) ;
+    int stopArmy = 0;
+    while ( enemyArmy->isAlive() and spaceShip != nullptr )
+    {
+        moveSpaceship();
+        enemyArmy->moveArmy();
+        moveBullets();
 
         if ( ! shootFrequency-- ){
             enemyBullets.emplace_back(enemyArmy->enemyFire());
-            shootFrequency = 40 - level*5 ;
+            shootFrequency = max( 45 - level * 5, 10 ) ;
         }
-        enemyArmy->moveArmy();
-        moveBullets();
+        if ( stopArmy == 1 ){
+            enemyArmy->ableToMove = true;
+            stopArmy = 0;
+        }
+
+        if ( ! enemyArmy->ableToMove and --stopArmy == -1 )
+            stopArmy = 50;
+
         usleep(100000);
     }
     if ( spaceShip == nullptr )
@@ -748,15 +822,15 @@ void Level::play(){
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
-int main(){
 
+int main(){
 
     bool wantContinue = true;
     int level = 0;
     int score = 0;
     int livesCount = 3;
-    int width = 95;
-    int height = 34;
+    int width = 55;
+    int height = 25;
     initscr();
     refresh();
     while ( wantContinue ){
