@@ -288,6 +288,10 @@ public:
         coords.emplace_back(x+5,y-2);
         showSapceShip();
     }
+    ~SpaceShip(){
+        for ( const auto & i : coords )
+            mvwprintw(win,i.second,i.first," ");
+    }
     void showSapceShip(){
         for ( const auto & i : coords )
             mvwprintw(win,i.second,i.first,"o");
@@ -353,7 +357,7 @@ private:
     Bullet  * myBullet;
     EnemyArmy * enemyArmy;
     WINDOW  * win;
-    list<Bullet*> enemyBullets;
+    list<unique_ptr<Bullet>> enemyBullets;
     int height,width;
     int lives;
     void intro();
@@ -385,8 +389,37 @@ public:
     int getScore(){ return score; }
     void scoreIncrease();
     void moveBullets();
+    void died();
+    void blik();
 };
 
+void Level::blik(){
+    for( int i = 0; i < 3 ; i++ ){
+    spaceShip = new SpaceShip(height,width,win);
+    wrefresh(win);
+    usleep(50000);
+    delete spaceShip;
+    wrefresh(win);
+    usleep(50000);
+    }
+    spaceShip = new SpaceShip(height,width,win);
+};
+
+void Level::died(){
+    delete spaceShip;
+    spaceShip = nullptr;
+    if ( ! --lives ){
+        // konec volaaky, otazka pokracovania
+    }
+    //blik();
+
+    spaceShip = new SpaceShip(width,height,win);
+    spaceShip->showSapceShip();
+    mvwprintw(win,height-1,2,"LIVES: %d", lives);
+    enemyBullets.clear();
+    wrefresh(win);
+    refresh();
+}
 
 
 void Level::intro() {
@@ -424,13 +457,11 @@ void Level::moveBullets() {
             delete myBullet;
             myBullet = nullptr;
         }
-    for ( auto i  = enemyBullets.begin(); i != enemyBullets.end(); i++){        //----------------nedokonane------------------------------
-        if ( !(*i)->move() ){
-            delete spaceShip;
-            if ( --lives ){
-                spaceShip = new SpaceShip(width,height,win);
-                mvwprintw(win,height-1,2,"LIVES: %d", lives);
-            }
+
+    for (auto & enemyBullet : enemyBullets){        //----------------nedokonane------------------------------
+        if ( !enemyBullet->move() ){
+            died();
+            return;
         }
     }
 }
@@ -440,8 +471,8 @@ void Level::play(){
     noecho();
     nodelay(stdscr, TRUE);
     int shoot = 20;
-    while ( enemyArmy->isAlive() && spaceShip != nullptr )
-    {
+
+    while ( enemyArmy->isAlive() && spaceShip != nullptr ){
         char a  ;
         if ( ( a = getch()) == ERR )
             a = 'q' ;
@@ -459,6 +490,7 @@ void Level::play(){
             enemyBullets.emplace_back(enemyArmy->enemyFire());
             shoot = 10;
         }
+
         usleep(100000);
     }
 
