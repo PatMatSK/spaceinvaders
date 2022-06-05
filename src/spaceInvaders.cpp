@@ -1,5 +1,4 @@
-//can not kill me
-
+// eľte variabilne bariera pre myship, a zrazka enemies s barierou
 #include <ncurses.h>
 #include <iostream>
 #include <unistd.h>
@@ -71,7 +70,7 @@ public:
     pair<int,int>   getCoords(){ return coords[0]; }
     bool            canMove(int x, int y) override;
     bool            move();
-    char            bulletHit();
+    unsigned int    bulletHit();
 
 };
 
@@ -79,7 +78,7 @@ public:
 
 
 bool Bullet::canMove(int x, int y) {
-    char daco = chtype mvwinch( win, y, x);
+    auto  daco = chtype mvwinch( win, y, x);
     if (  daco == 'X' && ! direction  )   // no hitting enemy by enemy
         return true;
     return daco == ' ';
@@ -107,7 +106,7 @@ bool Bullet::move(){
     return false;
 }
 
-char Bullet::bulletHit(){
+unsigned int Bullet::bulletHit(){
     if ( direction )
         return chtype mvwinch( win, coords[0].second-1, x);
     return chtype mvwinch( win, coords[0].second+1, x);
@@ -419,11 +418,9 @@ public:
     void    scoreIncrease();
     void    moveBullets();
     void    died();
-    void    blik();
     void    obstacleCreator();
     void    hitByMyBullet();
-    void    obstacleHitted( const pair<int,int> & c);
-    bool    checkBarier( Bullet * b);
+    bool    obstacleHitted( const pair<int,int> & c);
     bool    ask();
     bool    hitByEnemyBullet( const pair<int,int> & c );
 };
@@ -497,17 +494,6 @@ bool Level::ask(){
     return false;
 }
 
-void Level::blik(){
-    for( int i = 0; i < 3 ; i++ ){
-    spaceShip = new SpaceShip(height,width,win);
-    wrefresh(win);
-    usleep(50000);
-    delete spaceShip;
-    wrefresh(win);
-    usleep(50000);
-    }
-    spaceShip = new SpaceShip(height,width,win);
-};
 
 void Level::died(){
     sleep(2);
@@ -515,9 +501,7 @@ void Level::died(){
     spaceShip = nullptr;
     if ( ! --lives ){
         return;
-        // konec volaaky, otazka pokracovania
     }
-    //blik();
 
     spaceShip = new SpaceShip(width,height,win);
     spaceShip->showMe();
@@ -526,19 +510,17 @@ void Level::died(){
     wrefresh(win);
 
 }
-void    Level::obstacleHitted( const pair<int,int> & c){
-/*
-            mvwprintw(win,1,1,"%d   %d", c.first, c.second );
-            wrefresh(win);
-  */
+bool    Level::obstacleHitted( const pair<int,int> & c){
+
     for ( int i = 0; i < obstacles.size() ; i++ )
         if ( obstacles[i]->contains(c) ){
             if ( obstacles[i]->getDamage(c) ){
                 delete obstacles[i];
                 obstacles.erase(obstacles.begin()+i);
             }
-            return;
+            return false;
         }
+    return true;
 }
 
 
@@ -549,22 +531,15 @@ void Level::scoreIncrease() {
 }
 
 
-bool Level::checkBarier( Bullet * b){
-
-    if ( b->getCoords().second <= 1  )
-        return true;
-    return false;
-}
-
 
 void Level::hitByMyBullet(){
 
-    //char hittedObject = myBullet->bulletHit();
+    //auto hittedObject = myBullet->bulletHit();
     pair<int,int> colision = make_pair( myBullet->getCoords().first,myBullet->getCoords().second-1 );
 
-    obstacleHitted( colision );
+    if ( obstacleHitted( colision ) )
+        scoreIncrease();
     enemyArmy->killEnemy( colision );
-    scoreIncrease();
 
     /*
     mvwprintw(win,1,1,"%d   %d  %c", colision.first, colision.second, hittedObject);
@@ -580,13 +555,14 @@ void Level::hitByMyBullet(){
         wrefresh(win);
         obstacleHitted( colision );
     }
-*/
+    */
+
     delete myBullet;
     myBullet = nullptr;
 }
 
 bool Level::hitByEnemyBullet( const pair<int,int> & c ){
-    if ( spaceShip->contains(make_pair(c.first,c.second-1)) )
+    if ( spaceShip->contains(make_pair(c.first,c.second+1)) )
         return true;
     obstacleHitted(make_pair(c.first,c.second+1));
     return false;
@@ -608,6 +584,7 @@ void Level::moveBullets() {
             return;
         }
 }
+
 
 void Level::play(){
 
