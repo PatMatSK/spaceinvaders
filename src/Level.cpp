@@ -44,7 +44,7 @@ void Level::obstacleCreator()
 void Level::intro()
 {
     ifstream file;
-    file.open("src/files/top_five.txt");
+    file.open("assets/top_five.txt");
     string nickname;
     int i = 0;
     mvwprintw(win,height/2-4,width/2-7,"SPACE INVADERS");
@@ -74,7 +74,7 @@ void myCleaner()
 void Level::obstacleReader()
 {
     ifstream file;
-    file.open("src/files/obstacles.txt");
+    file.open("assets/obstacles.txt");
     pair<int,int> obstacleCoords;
 
     while ( ! file.eof() )
@@ -93,7 +93,7 @@ void Level::obstacleReader()
 vector<pair<string,int>> getPlayers(int score)
 {
     ifstream file;
-    file.open("src/files/top_five.txt");
+    file.open("assets/top_five.txt");
     string nickname;
     int best_score;
     vector<pair<string, int>> topPlayers;
@@ -120,7 +120,7 @@ vector<pair<string,int>> getPlayers(int score)
 void writeToFile( vector<pair<string,int>> & topPlayers )
 {
     ofstream file;
-    file.open("src/files/top_five.txt");
+    file.open("assets/top_five.txt");
     for (int j = 0; j < topPlayers.size() and j < 5 ; j++ )
         file << topPlayers[j].first << " " << topPlayers[j].second << endl;
     file.close();
@@ -337,7 +337,7 @@ void Level::moveBullets()
 void Level::saveObstacles()
 {
     ofstream file;
-    file.open("src/files/obstacles.txt");
+    file.open("assets/obstacles.txt");
 
     for ( const auto & i : obstacles )
         i->writeCoords(file);
