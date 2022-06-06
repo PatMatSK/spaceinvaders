@@ -21,7 +21,7 @@ compile: src/*.cpp
 	$(CXX) $(FLAGS)  -c src/Obstacle.cpp -o build/Obstacle.o
 
 clean:
-	rm -rf build Makefile.d matulpat
+	rm -rf build Makefile.d matulpat src
 
 deps:
 	$(CXX) -MM src/*.cpp > Makefile.d

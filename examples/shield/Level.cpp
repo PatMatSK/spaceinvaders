@@ -7,7 +7,7 @@ Level::Level(int _lvl, int _score, int _lives, int _width, int _height ): myBull
 {
     win = newwin(height,width,0,0);
     intro();
-    box(win,0,0);
+    box();
 
     enemyArmy = new EnemyArmy(win, 2, width,height-12);
     spaceShip = new SpaceShip(width,height,win);
@@ -55,11 +55,29 @@ void Level::intro()
 
     mvwprintw(win,height/2+10,width/2-12,"(press any key to start)");
     move(0,0);
-    box(win,0,0);
+    box();
     wrefresh(win);
     getch();
     wclear(win);
     file.close();
+}
+
+void Level::box()
+{
+    for ( int i = 0; i < height ; i++ )
+    {
+        mvwprintw(win,i,0,"|");
+        mvwprintw(win,i,width-1,"|");
+    }
+    for ( int i = 0; i < width ; i++ )
+    {
+        mvwprintw(win,0,i,"-");
+        mvwprintw(win,height-1,i,"-");
+    }
+    mvwprintw(win,0,0,"+");
+    mvwprintw(win,0,width-1,"+");
+    mvwprintw(win,height-1,0,"+");
+    mvwprintw(win,height-1,width-1,"+");
 }
 
 void myCleaner()
@@ -175,7 +193,7 @@ void Level::writePlayer()
     }
 
     wclear( win );
-    box(win,0,0);
+    box();
     wrefresh(win);
 }
 
@@ -186,7 +204,7 @@ void Level::writePlayer()
 void Level::ask()
 {
     wclear(win);
-    box(win,0,0);
+    box();
     mvwprintw( win, height/2-5, width/2-4,"GAME OVER");
     if ( score > 0 )
         writePlayer();

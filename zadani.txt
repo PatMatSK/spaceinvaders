@@ -8,7 +8,9 @@ poškodené prekážky (tie úplne zničené nám však už nenavráti). Štít 
 však dávať aj na nepriateľov, pretože dokážu strieľat, a to každým kolom častejšie. Nepriatelská armáda
 pomaly postupuje nižšie. Naša bojová loď síce disponuje najvyspelejšou technológoiu, avšak fyziku neoklameme a preto
 štart z miesta či okamžité zastavenie budú jemnou výzvou. Za zostrelenie nepriateľa získame každým kolom viac bodov,
-a za elimináciu celého pluku 100.
+a za elimináciu celého pluku 100. S prichádzajúcimi vojskami naše prekážky taktiež slabnú. Sme schopní opraviť prekážky
+iba do takého stavu v akom boli pri príchode nepriatelského pluku. Stav prekážok sa totiž neobnovuje pri príchode dalšej
+vlny nepriateľov.
 
 Pohybujeme sa pomocou kláves 'a' a 'd' a strielame pomocou medzery. Po skončení môžeme sa zapísať do tabuľky
 top 5 hráčov ( ak je to treba ) a zvolíme si, či chceme pokračovať.

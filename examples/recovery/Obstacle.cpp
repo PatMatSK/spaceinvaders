@@ -11,16 +11,18 @@ Obstacle::Obstacle(WINDOW *w, vector<pair<int, int>> v): Object(w,"Q")
 
 Obstacle::Obstacle(WINDOW *w, int a, int b): Object(w,"Q")
 {
+    /*
     coords.emplace_back(a,b);
     coords.emplace_back(a+1,b);
     coords.emplace_back(a+2,b);
     coords.emplace_back(a+7,b);
     coords.emplace_back(a+8,b);
     coords.emplace_back(a+9,b);
-    for ( int i = 0; i < 10 ; i++ )
+    */
+     for ( int i = 0; i < 10 ; i++ )
     {
         coords.emplace_back(a+i,b-1);
-        coords.emplace_back(a+i,b-2);
+        //coords.emplace_back(a+i,b-2);
     }
     origin = coords;
     showMe();

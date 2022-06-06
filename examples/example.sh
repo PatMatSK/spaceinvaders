@@ -1,5 +1,7 @@
 #!/bin/bash
 
+make clean
+
 if [ "$1" = "stp" ];then
   rm -fr src matulpat
   cp -R stop src

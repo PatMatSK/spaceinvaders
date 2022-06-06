@@ -39,6 +39,7 @@ private:
     void                        repairObstacles     ();
     void                        bonusCheck          ();
     void                        makeBonus           ();
+    void                        box                 ();
 public:
     int                         level;
     int                         score;
