@@ -4,10 +4,14 @@ Jedná sa o arkádovú hru Space Invaders. Pomocou našej lode sa snažíme zost
 Na pomoc máme prekážky, ktoré sa však zásahmi našich aj nepriateľských striel poškodzujú. Začíname s 3 životmi.
 Po eliminácii nepriateľského vojska prichádza ďalšie. Po zásahu nepriateľa je 30% šanca na bonus,
 ktorý môže pozastaviť nepriateľov na určitý čas, dať nám štít(jeden život navyše) alebo opraviť všetky
-poškodené prekážky (tie úplne zničené nám však už nenavráti). Pozor si treba však dávať aj na nepriateľov,
-pretože dokážu strieľat, a to každým kolom častejšie. Nepriatelská armáda pomaly postupuje nižšie. Naša bojová loď
-síce disponuje najvyspelejšou technológoiu, avšak fyziku neoklameme a preto štart z miesta či okamžité zastavenie
-budú jemnou výzvou. Za zostrelenie nepriateľa získame každým kolom viac bodov, a za elimináciu celého pluku 100.
+poškodené prekážky (tie úplne zničené nám však už nenavráti). Štít máme vždy účinný iba na jedno vojsko. Pozor si treba
+však dávať aj na nepriateľov, pretože dokážu strieľat, a to každým kolom častejšie. Nepriatelská armáda
+pomaly postupuje nižšie. Naša bojová loď síce disponuje najvyspelejšou technológoiu, avšak fyziku neoklameme a preto
+štart z miesta či okamžité zastavenie budú jemnou výzvou. Za zostrelenie nepriateľa získame každým kolom viac bodov,
+a za elimináciu celého pluku 100.
 
-Pohybujeme sa pomocou kláves 'a' a 'd' a strielame pomocou medzery. Po skončení môžeme zapísať sa do tabuľky
+Pohybujeme sa pomocou kláves 'a' a 'd' a strielame pomocou medzery. Po skončení môžeme sa zapísať do tabuľky
 top 5 hráčov ( ak je to treba ) a zvolíme si, či chceme pokračovať.
+
+V hre máme rôzne objekty, ktoré sa líšia funkcialitou, avšak všetky majú súradnice, okno v ktorom sa pracuje,
+vedia sa zobraziť a povedať či sa nachádzajú na danej súradnici.
