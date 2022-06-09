@@ -331,11 +331,11 @@ bool Level::hitByEnemyBullet( const pair<int,int> & c )
 
 void Level::moveBullets()
 {
-    if ( myBullet && ! myBullet->move() )
+    if ( myBullet && ! myBullet->move(true) )
         hitByMyBullet();
 
     for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )
-        if ( !(*enemyBullet)->move() )
+        if ( !(*enemyBullet)->move(false) )
         {
             if ( hitByEnemyBullet((*enemyBullet)->getCoords() ) )
                 playerDied();
@@ -365,8 +365,8 @@ void Level::moveSpaceship()
     if ( ( a = getch() ) != ERR )
     {
         switch (a) {
-            case 'a': spaceShip->moveLeft(); break;
-            case 'd': spaceShip->moveRight(); break;
+            case 'a': spaceShip->move(false); break;
+            case 'd': spaceShip->move(true); break;
             case ' ':
             {
                 if ( myBullet == nullptr )
@@ -386,7 +386,7 @@ void Level::play()
 {
     noecho();
     nodelay(stdscr, TRUE);
-    int shootFrequency = max( 45 - level * 5, 10 ) ;
+    int shootFrequency = max( 20 - level * 5, 10 ) ;
     int stopArmy = 0;
     while ( enemyArmy->isAlive() and spaceShip != nullptr )
     {

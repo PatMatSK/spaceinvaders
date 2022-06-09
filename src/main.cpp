@@ -13,7 +13,7 @@ int main()
     int score = 0;
     int livesCount = 3;
     int width = 50;
-    int height = 24;
+    int height = 29;
     initscr();
     refresh();
 

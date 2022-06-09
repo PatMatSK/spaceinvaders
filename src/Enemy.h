@@ -10,12 +10,9 @@ using namespace std;
 
 class Enemy:public Object{
 public:
-                        Enemy       ( WINDOW * w, int a, int b);
+                        Enemy( WINDOW * w, int a, int b );
                         ~Enemy      ();
-    void                moveLeft    ();
-    void                moveRight   ();
     void                getDown     ();
-    void                move        ( bool direction );
     unique_ptr<Bullet>  shoot       () const;
 };
 

@@ -15,15 +15,15 @@ Bullet::~Bullet()
 }
 
 
-bool Bullet::canMove(int x, int y)
+bool Bullet::canMove(int a, int b)
 {
-    auto  daco = chtype mvwinch( win, y, x);
-    if (  daco == 'X' && ! direction  )   // no hitting enemy by enemy
+    auto  target = chtype mvwinch( win, b, a);
+    if (  target == 'X' && ! direction  )   // no hitting enemy by enemy
         return true;
-    return daco == ' ';
+    return target == ' ';
 }
 
-bool Bullet::move()
+bool Bullet::move( bool direction )
 {
     int old_y = coords[0].second;
     if ( direction && canMove( coords[0].first, --coords[0].second ) )

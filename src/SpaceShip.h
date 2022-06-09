@@ -15,9 +15,9 @@ public:
     bool                shield;
                         SpaceShip           ( int a, int b, WINDOW * w );
                         ~SpaceShip          ();
-    bool                canMove             ( int x, int y ) override;
-    void                moveLeft            ();
-    void                moveRight           ();
+    bool                canMove             ( int a, int b ) override;
+    void                moveLeft            () override;
+    void                moveRight           () override ;
     Bullet *            shoot               ();
     void                activateShield      ();
     void                deactivateShield    ();

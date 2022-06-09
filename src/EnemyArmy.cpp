@@ -6,9 +6,13 @@ EnemyArmy::EnemyArmy(WINDOW *win, int count, int _width, int _limit):
     bounceCount(0),direction(true),width(_width),downLimit(_limit),ableToMove(true)
 {
     for ( int i = 1 ; i < count+1 ; i++ )
-        for ( int j = 0 ; j < 6 ; j+=3 )
-            enemies.emplace_back(make_unique<Enemy>( win,i*5 + 10, j + 3 ));
-    downEdge = 9;  // limit for one row is 5, add 4 for every next row
+    {
+        enemies.emplace_back(make_unique<EnemyBasic>( win,i*5 + 10, 3 ));
+        enemies.emplace_back(make_unique<EnemySnake>( win,i*5 + 10, 6 ));
+        enemies.emplace_back(make_unique<EnemyCrazy>( win,i*5 + 10, 9 ));
+    }
+
+    downEdge = 12;  // limit for one row is 5, add 4 for every next row
     leftEdge = 15;
     rightEdge = 15 + count * 5;
     wrefresh( win );
