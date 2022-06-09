@@ -74,7 +74,10 @@ Inheritance diagram for Enemy:</div>
  <div class="center">
   <img src="classEnemy.png" usemap="#Enemy_map" alt=""/>
   <map id="Enemy_map" name="Enemy_map">
-<area href="classObject.html" alt="Object" shape="rect" coords="0,0,50,24"/>
+<area href="classObject.html" alt="Object" shape="rect" coords="95,0,180,24"/>
+<area href="classEnemyBasic.html" alt="EnemyBasic" shape="rect" coords="0,112,85,136"/>
+<area href="classEnemyCrazy.html" alt="EnemyCrazy" shape="rect" coords="95,112,180,136"/>
+<area href="classEnemySnake.html" alt="EnemySnake" shape="rect" coords="190,112,275,136"/>
   </map>
 </div></div>
 <table class="memberdecls">
@@ -83,18 +86,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aba2c88b46baa54f5af03a8dbaa58b71b"><td class="memItemLeft" align="right" valign="top"><a id="aba2c88b46baa54f5af03a8dbaa58b71b" name="aba2c88b46baa54f5af03a8dbaa58b71b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>Enemy</b> (WINDOW *w, int a, int b)</td></tr>
 <tr class="separator:aba2c88b46baa54f5af03a8dbaa58b71b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a40d054c26a502f7dbd310f4b1fb51c5c"><td class="memItemLeft" align="right" valign="top"><a id="a40d054c26a502f7dbd310f4b1fb51c5c" name="a40d054c26a502f7dbd310f4b1fb51c5c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>moveLeft</b> ()</td></tr>
-<tr class="separator:a40d054c26a502f7dbd310f4b1fb51c5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7fd09209895cb57198408f32cac8ce9"><td class="memItemLeft" align="right" valign="top"><a id="ab7fd09209895cb57198408f32cac8ce9" name="ab7fd09209895cb57198408f32cac8ce9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>moveRight</b> ()</td></tr>
-<tr class="separator:ab7fd09209895cb57198408f32cac8ce9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add15996b394587df765d81c93f3bf860"><td class="memItemLeft" align="right" valign="top"><a id="add15996b394587df765d81c93f3bf860" name="add15996b394587df765d81c93f3bf860"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>getDown</b> ()</td></tr>
 <tr class="separator:add15996b394587df765d81c93f3bf860"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad7d5d431bc2d1461467ea5704e953f28"><td class="memItemLeft" align="right" valign="top"><a id="ad7d5d431bc2d1461467ea5704e953f28" name="ad7d5d431bc2d1461467ea5704e953f28"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>move</b> (bool direction)</td></tr>
-<tr class="separator:ad7d5d431bc2d1461467ea5704e953f28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87918f8956740b52b72d970e12db402c"><td class="memItemLeft" align="right" valign="top"><a id="a87918f8956740b52b72d970e12db402c" name="a87918f8956740b52b72d970e12db402c"></a>
 unique_ptr&lt; <a class="el" href="classBullet.html">Bullet</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>shoot</b> () const</td></tr>
 <tr class="separator:a87918f8956740b52b72d970e12db402c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,6 +102,15 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>canMove</b> (
 <tr class="memitem:a3dce074fdfbcc53e9318cbf61d408d9b inherit pub_methods_classObject"><td class="memItemLeft" align="right" valign="top"><a id="a3dce074fdfbcc53e9318cbf61d408d9b" name="a3dce074fdfbcc53e9318cbf61d408d9b"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>contains</b> (const pair&lt; int, int &gt; &amp;c)</td></tr>
 <tr class="separator:a3dce074fdfbcc53e9318cbf61d408d9b inherit pub_methods_classObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42685e4b7d01ab315e195bb191fcddd0 inherit pub_methods_classObject"><td class="memItemLeft" align="right" valign="top"><a id="a42685e4b7d01ab315e195bb191fcddd0" name="a42685e4b7d01ab315e195bb191fcddd0"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>move</b> (bool direction)</td></tr>
+<tr class="separator:a42685e4b7d01ab315e195bb191fcddd0 inherit pub_methods_classObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a791775393141b7945ac34202295db1b7 inherit pub_methods_classObject"><td class="memItemLeft" align="right" valign="top"><a id="a791775393141b7945ac34202295db1b7" name="a791775393141b7945ac34202295db1b7"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>moveRight</b> ()</td></tr>
+<tr class="separator:a791775393141b7945ac34202295db1b7 inherit pub_methods_classObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8daf1d4a70a9dcd3d6156b612fc03e76 inherit pub_methods_classObject"><td class="memItemLeft" align="right" valign="top"><a id="a8daf1d4a70a9dcd3d6156b612fc03e76" name="a8daf1d4a70a9dcd3d6156b612fc03e76"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>moveLeft</b> ()</td></tr>
+<tr class="separator:a8daf1d4a70a9dcd3d6156b612fc03e76 inherit pub_methods_classObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a10ad530fbd7f081255eebbbcec1968e8 inherit pub_methods_classObject"><td class="memItemLeft" align="right" valign="top"><a id="a10ad530fbd7f081255eebbbcec1968e8" name="a10ad530fbd7f081255eebbbcec1968e8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>showMe</b> ()</td></tr>
 <tr class="separator:a10ad530fbd7f081255eebbbcec1968e8 inherit pub_methods_classObject"><td class="memSeparator" colspan="2">&#160;</td></tr>
