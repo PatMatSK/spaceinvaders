@@ -13,11 +13,6 @@ Enemy::~Enemy()
         mvwprintw(win, i.second, i.first, " ");
 }
 
-unique_ptr<Bullet>  Enemy::shoot() const
-{
-    return make_unique<Bullet> (Bullet(win,x+1,y+2,false));
-}
-
 void Enemy::getDown()
 {
     for ( auto & i : coords )

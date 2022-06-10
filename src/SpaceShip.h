@@ -5,6 +5,7 @@
 
 #include "Object.h"
 #include "Bullet.h"
+#include "BulletBasic.h"
 
 using namespace std;
 

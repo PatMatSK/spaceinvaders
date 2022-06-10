@@ -8,6 +8,11 @@ EnemySnake::EnemySnake(WINDOW * w, int a, int b): Enemy (w,a,b)
     showMe();
 }
 
+unique_ptr<Bullet>  EnemySnake::shoot()
+{
+    return make_unique<BulletRandom> (BulletRandom(win, x + 1, y + 2, false));
+}
+
 void EnemySnake::moveRight()
 {
     x++;

@@ -8,6 +8,11 @@
 #include "SpaceShip.h"
 #include "Bullet.h"
 #include "Obstacle.h"
+#include "Bonus.h"
+#include "BonusStop.h"
+#include "BonusShield.h"
+#include "BonusRepair.h"
+#include "BonusDeleteObstacle.h"
 
 using namespace std;
 
@@ -19,10 +24,12 @@ private:
     WINDOW *                    win;
     list<unique_ptr<Obstacle>>  obstacles;
     list<unique_ptr<Bullet>>    enemyBullets;
+    vector<unique_ptr<Bonus>>   bonuses;
     int                         height;
     int                         width;
     string                      getNickName         ( const pair<int,int>& position );
     void                        intro               ();
+    void                        loadBonuses         ();
     void                        scoreIncrease       ();
     void                        playerDied          ();
     void                        obstacleCreator     ();

@@ -33,7 +33,7 @@ bool SpaceShip::canMove( int a, int b )
 
 Bullet* SpaceShip::shoot()
 {
-    return new Bullet(win,x+4,y-3,true);
+    return new BulletBasic(win,x+4,y-3,true);
 }
 
 void SpaceShip::moveRight()

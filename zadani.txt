@@ -16,4 +16,5 @@ Pohybujeme sa pomocou kláves 'a' a 'd' a strielame pomocou medzery. Po skončen
 top 5 hráčov ( ak je to treba ) a zvolíme si, či chceme pokračovať.
 
 V hre máme rôzne objekty, ktoré sa líšia funkcialitou, avšak všetky majú súradnice, okno v ktorom sa pracuje,
-vedia sa zobraziť a povedať či sa nachádzajú na danej súradnici. V hren máme viac nepriatelov a každý sa pohybuje inak.
+vedia sa zobraziť a povedať či sa nachádzajú na danej súradnici. V hre máme viac druhov nepriatelov, každý strieľa
+a pohybuje sa odlišne.

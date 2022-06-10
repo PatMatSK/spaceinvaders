@@ -1,4 +1,5 @@
 #include "Level.h"
+#define BONUS_COUNT 4
 
 using namespace std;
 
@@ -8,7 +9,7 @@ Level::Level(int _lvl, int _score, int _lives, int _width, int _height ): myBull
     win = newwin(height,width,0,0);
     intro();
     box();
-
+    loadBonuses();
     enemyArmy = new EnemyArmy(win, 3, width,height-12);
     spaceShip = new SpaceShip(width,height,win);
 
@@ -29,6 +30,7 @@ Level::~Level()
     delete enemyArmy;
     enemyBullets.clear();
     obstacles.clear();
+    bonuses.clear();
     delwin(win);
 }
 
@@ -78,6 +80,14 @@ void Level::box()
     mvwprintw(win,0,width-1,"+");
     mvwprintw(win,height-1,0,"+");
     mvwprintw(win,height-1,width-1,"+");
+}
+
+void Level::loadBonuses()
+{
+    bonuses.emplace_back(make_unique<BonusRepair> (BonusRepair()));
+    bonuses.emplace_back(make_unique<BonusStop> (BonusStop()));
+    bonuses.emplace_back(make_unique<BonusDeleteObstacle> (BonusDeleteObstacle()));
+    bonuses.emplace_back(make_unique<BonusShield> (BonusShield()));
 }
 
 void myCleaner()
@@ -276,28 +286,11 @@ void Level::bulletHitted(const pair<int,int> & c)
         }
 }
 
-void Level::repairObstacles()
-{
-    for ( const auto & i : obstacles )
-        i->repair();
-}
-
-void Level::bonusCheck()
-{
-    int i = rand() % 100;
-    if ( i < 30 )
-        makeBonus();
-}
-
 void Level::makeBonus()
 {
-    int i = rand() % 3;
-    switch (i)
-    {
-        case 0:     spaceShip->activateShield();    break;
-        case 1:     enemyArmy->ableToMove = false;  break;
-        default:    repairObstacles();              break;
-    }
+    int i = rand() % 100;
+    if ( i < 100 )
+        bonuses[ rand() % BONUS_COUNT ]->applyBonus(spaceShip,enemyArmy,obstacles);
 }
 
 /*
@@ -312,7 +305,7 @@ void Level::hitByMyBullet()
     if ( enemyArmy->killEnemy( colision ))
     {
         scoreIncrease();
-        bonusCheck();
+        makeBonus();
     }
 
     delete myBullet;
@@ -386,7 +379,7 @@ void Level::play()
 {
     noecho();
     nodelay(stdscr, TRUE);
-    int shootFrequency = max( 20 - level * 5, 10 ) ;
+    int shootFrequency = max( 10 - level * 5, 10 ) ;
     int stopArmy = 0;
     while ( enemyArmy->isAlive() and spaceShip != nullptr )
     {

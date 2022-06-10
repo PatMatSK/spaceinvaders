@@ -10,6 +10,11 @@ EnemyBasic::EnemyBasic(WINDOW * w, int a, int b): Enemy ( w, a, b )
     showMe();
 }
 
+unique_ptr<Bullet>  EnemyBasic::shoot()
+{
+    return make_unique<BulletBasic> (BulletBasic(win,x+1,y+2,false));
+}
+
 void EnemyBasic::moveLeft()
 {
     for ( auto & i : coords)
