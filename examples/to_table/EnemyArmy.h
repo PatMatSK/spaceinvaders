@@ -4,6 +4,9 @@
 #include "imports.cpp"
 
 #include "Enemy.h"
+#include "EnemyBasic.h"
+#include "EnemySnake.h"
+#include "EnemyCrazy.h"
 #include "Bullet.h"
 
 using namespace std;

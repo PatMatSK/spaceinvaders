@@ -24,16 +24,16 @@ SpaceShip::~SpaceShip()
 }
 
 
-bool SpaceShip::canMove( int x, int y )
+bool SpaceShip::canMove( int a, int b )
 {
-    if (  x <= 0 || x + 9 >= width )
+    if (  a <= 0 || a + 9 >= width )
         return true;
     return false;
 }
 
 Bullet* SpaceShip::shoot()
 {
-    return new Bullet(win,x+4,y-3,true);
+    return new BulletBasic(win,x+4,y-3,true);
 }
 
 void SpaceShip::moveRight()

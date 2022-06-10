@@ -16,6 +16,9 @@ public:
                             Object          ( WINDOW * w, const char * m ): win(w),me(m){}
     virtual bool            canMove         ( int a, int b){return false;}
     bool                    contains        ( const pair<int,int> & c);
+    bool virtual            move            ( bool direction );
+    void virtual            moveRight       (){}
+    void virtual            moveLeft        (){}
     void                    showMe          ();
 };
 

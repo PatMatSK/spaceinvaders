@@ -29,7 +29,7 @@ compile: all
 	$(CXX) $(FLAGS) -o matulpat build/*.o -lncurses
 
 clean:
-	rm -rf build Makefile.d matulpat assets/obstacles.txt
+	rm -rf build Makefile.d matulpat assets/obstacles.txt src
 
 deps:
 	$(CXX) -MM src/*.cpp > Makefile.d

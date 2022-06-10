@@ -1,4 +1,5 @@
 #include "Level.h"
+#define BONUS_COUNT 4
 
 using namespace std;
 
@@ -8,7 +9,7 @@ Level::Level(int _lvl, int _score, int _lives, int _width, int _height ): myBull
     win = newwin(height,width,0,0);
     intro();
     box();
-
+    loadBonuses();
     enemyArmy = new EnemyArmy(win, 3, width,height-12);
     spaceShip = new SpaceShip(width,height,win);
 
@@ -29,6 +30,7 @@ Level::~Level()
     delete enemyArmy;
     enemyBullets.clear();
     obstacles.clear();
+    bonuses.clear();
     delwin(win);
 }
 
@@ -44,7 +46,7 @@ void Level::obstacleCreator()
 void Level::intro()
 {
     ifstream file;
-    file.open("src/files/top_five.txt");
+    file.open("assets/top_five.txt");
     string nickname;
     int i = 0;
     mvwprintw(win,height/2-4,width/2-7,"SPACE INVADERS");
@@ -80,6 +82,14 @@ void Level::box()
     mvwprintw(win,height-1,width-1,"+");
 }
 
+void Level::loadBonuses()
+{
+    bonuses.emplace_back(make_unique<BonusRepair> (BonusRepair()));
+    bonuses.emplace_back(make_unique<BonusStop> (BonusStop()));
+    bonuses.emplace_back(make_unique<BonusDeleteObstacle> (BonusDeleteObstacle()));
+    bonuses.emplace_back(make_unique<BonusShield> (BonusShield()));
+}
+
 void myCleaner()
 {
     nodelay(stdscr, TRUE);
@@ -92,7 +102,7 @@ void myCleaner()
 void Level::obstacleReader()
 {
     ifstream file;
-    file.open("src/files/obstacles.txt");
+    file.open("assets/obstacles.txt");
     pair<int,int> obstacleCoords;
 
     while ( ! file.eof() )
@@ -111,7 +121,7 @@ void Level::obstacleReader()
 vector<pair<string,int>> getPlayers(int score)
 {
     ifstream file;
-    file.open("src/files/top_five.txt");
+    file.open("assets/top_five.txt");
     string nickname;
     int best_score;
     vector<pair<string, int>> topPlayers;
@@ -134,18 +144,14 @@ vector<pair<string,int>> getPlayers(int score)
     return topPlayers;
 }
 
-
 void writeToFile( vector<pair<string,int>> & topPlayers )
 {
     ofstream file;
-    file.open("src/files/top_five.txt");
+    file.open("assets/top_five.txt");
     for (int j = 0; j < topPlayers.size() and j < 5 ; j++ )
         file << topPlayers[j].first << " " << topPlayers[j].second << endl;
     file.close();
 }
-
-
-
 
 string Level::getNickName( const pair<int,int>& position )
 {
@@ -280,28 +286,14 @@ void Level::bulletHitted(const pair<int,int> & c)
         }
 }
 
-void Level::repairObstacles()
-{
-    for ( const auto & i : obstacles )
-        i->repair();
-}
-
-void Level::bonusCheck()
-{
-    //int i = rand() % 100;
-    //if ( i < 30 )
-        makeBonus();
-}
-
 void Level::makeBonus()
 {
-    int i = 2;//rand() % 3;
-    switch (i)
-    {
-        case 0:     spaceShip->activateShield();    break;
-        case 1:     enemyArmy->ableToMove = false;  break;
-        default:    repairObstacles();              break;
-    }
+    bonuses[0]->applyBonus(spaceShip,enemyArmy,obstacles);
+    /*
+    int i = rand() % 100;
+    if ( i < 100 )
+        bonuses[ rand() % BONUS_COUNT ]->applyBonus(spaceShip,enemyArmy,obstacles);
+    */
 }
 
 /*
@@ -316,7 +308,7 @@ void Level::hitByMyBullet()
     if ( enemyArmy->killEnemy( colision ))
     {
         scoreIncrease();
-        bonusCheck();
+        makeBonus();
     }
 
     delete myBullet;
@@ -335,11 +327,11 @@ bool Level::hitByEnemyBullet( const pair<int,int> & c )
 
 void Level::moveBullets()
 {
-    if ( myBullet && ! myBullet->move() )
+    if ( myBullet && ! myBullet->move(true) )
         hitByMyBullet();
 
     for ( auto enemyBullet = enemyBullets.begin(); enemyBullet != enemyBullets.end(); enemyBullet++ )
-        if ( !(*enemyBullet)->move() )
+        if ( !(*enemyBullet)->move(false) )
         {
             if ( hitByEnemyBullet((*enemyBullet)->getCoords() ) )
                 playerDied();
@@ -355,7 +347,7 @@ void Level::moveBullets()
 void Level::saveObstacles()
 {
     ofstream file;
-    file.open("src/files/obstacles.txt");
+    file.open("assets/obstacles.txt");
 
     for ( const auto & i : obstacles )
         i->writeCoords(file);
@@ -369,8 +361,8 @@ void Level::moveSpaceship()
     if ( ( a = getch() ) != ERR )
     {
         switch (a) {
-            case 'a': spaceShip->moveLeft(); break;
-            case 'd': spaceShip->moveRight(); break;
+            case 'a': spaceShip->move(false); break;
+            case 'd': spaceShip->move(true); break;
             case ' ':
             {
                 if ( myBullet == nullptr )
@@ -390,7 +382,7 @@ void Level::play()
 {
     noecho();
     nodelay(stdscr, TRUE);
-    int shootFrequency = max( 45 - level * 5, 10 ) ;
+    int shootFrequency = max( 10 - level * 5, 10 ) ;
     int stopArmy = 0;
     while ( enemyArmy->isAlive() and spaceShip != nullptr )
     {

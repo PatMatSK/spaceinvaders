@@ -10,10 +10,10 @@ int main()
 {
     bool wantContinue = true;
     int level = 0;
-    int score = 999999;
+    int score = 5000;
     int livesCount = 1;
     int width = 50;
-    int height = 24;
+    int height = 29;
     initscr();
     refresh();
 
@@ -24,8 +24,8 @@ int main()
         wantContinue = lvl->wannaContinue;
         if ( lvl->fromStart )
         {
-            score = 0;
-            livesCount = 3;
+            score = 5000;
+            livesCount = 1;
             level = 0;
         }
         else

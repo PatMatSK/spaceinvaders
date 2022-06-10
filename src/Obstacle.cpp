@@ -26,6 +26,13 @@ Obstacle::Obstacle(WINDOW *w, int a, int b): Object(w,"Q")
     showMe();
 }
 
+void Obstacle::clean()
+{
+    for ( auto const & i : coords )
+        mvwprintw(win,i.second,i.first," ");
+    wrefresh(win);
+}
+
  bool      Obstacle::getDamage( const pair<int,int> & c )
 {
     coords.erase(find(coords.begin(), coords.end(), c) );

@@ -16,3 +16,15 @@ void Object::showMe()
         mvwprintw(win,i.second,i.first,me);
     wrefresh(win);
 }
+
+bool Object::move( bool direction )
+{
+    if ( direction )
+        moveRight();
+    else
+        moveLeft();
+
+    showMe();
+    wrefresh(win);
+    return true;
+}

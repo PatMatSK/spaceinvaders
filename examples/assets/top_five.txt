@@ -1,0 +1,5 @@
+fenomen 9999
+zalesak 5000
+sak_ja 500
+majster 240
+tonko 135

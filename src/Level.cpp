@@ -289,7 +289,7 @@ void Level::bulletHitted(const pair<int,int> & c)
 void Level::makeBonus()
 {
     int i = rand() % 100;
-    if ( i < 100 )
+    if ( i < 50 )
         bonuses[ rand() % BONUS_COUNT ]->applyBonus(spaceShip,enemyArmy,obstacles);
 }
 
