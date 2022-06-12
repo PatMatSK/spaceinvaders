@@ -47,7 +47,7 @@ void Obstacle::clean()
 {
     for ( const auto & i : coords )
         file << i.first << " " << i.second << endl;
-    file << endl;
+    file << -1 << " " << -1 << endl;
 }
 
 void Obstacle::repair()

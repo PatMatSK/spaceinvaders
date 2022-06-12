@@ -108,9 +108,12 @@ void Level::obstacleReader()
     while ( ! file.eof() )
     {
         vector<pair<int,int>> allCords;
-        while ( file >> obstacleCoords.first and file >> obstacleCoords.second )
+        while ( file >> obstacleCoords.first and file >> obstacleCoords.second
+                and obstacleCoords.first != -1 and obstacleCoords.second != -1 )
             allCords.push_back(obstacleCoords);
-        obstacles.emplace_back(make_unique<Obstacle>( Obstacle(win,allCords)));
+        if ( !allCords.empty() )
+            obstacles.emplace_back(make_unique<Obstacle>( Obstacle(win,allCords)));
+
     }
     file.close();
 }

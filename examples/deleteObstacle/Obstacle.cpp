@@ -9,7 +9,6 @@ Obstacle::Obstacle(WINDOW *w, vector<pair<int, int>> v): Object(w,"Q")
     showMe();
 }
 
-
 Obstacle::Obstacle(WINDOW *w, int a, int b): Object(w,"Q")
 {
     coords.emplace_back(a,b);
@@ -34,7 +33,7 @@ void Obstacle::clean()
     wrefresh(win);
 }
 
-bool      Obstacle::getDamage( const pair<int,int> & c )
+ bool      Obstacle::getDamage( const pair<int,int> & c )
 {
     coords.erase(find(coords.begin(), coords.end(), c) );
     mvwprintw(win,c.second,c.first," ");
@@ -48,7 +47,7 @@ bool      Obstacle::getDamage( const pair<int,int> & c )
 {
     for ( const auto & i : coords )
         file << i.first << " " << i.second << endl;
-    file << endl;
+    file << -1 << " " << -1 << endl;
 }
 
 void Obstacle::repair()
