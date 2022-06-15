@@ -16,6 +16,7 @@ public:
     bool            getDamage       ( const pair<int,int> & c);
     void            writeCoords     ( ofstream & file);
     void            repair          ();
+    void            clean           ();
 };
 
 #endif
