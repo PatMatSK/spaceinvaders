@@ -2,7 +2,7 @@ Space Invaders
 
 Jedná sa o arkádovú hru Space Invaders. Pomocou našej lode sa snažíme zostreliť nepriateľské vojsko.
 Na pomoc máme prekážky, ktoré sa však zásahmi našich aj nepriateľských striel poškodzujú. Začíname s 3 životmi.
-Po eliminácii nepriateľského vojska prichádza ďalšie. Po zásahu nepriateľa je 30% šanca na bonus,
+Po eliminácii nepriateľského vojska prichádza ďalšie. Po zásahu nepriateľa je 50% šanca na bonus,
 ktorý môže pozastaviť nepriateľov na určitý čas, dať nám štít(jeden život navyše) alebo opraviť všetky
 poškodené prekážky (tie úplne zničené nám však už nenavráti). Štít máme vždy účinný iba na jedno vojsko. Pozor si treba
 však dávať aj na nepriateľov, pretože dokážu strieľat, a to každým kolom častejšie. Nepriatelská armáda
