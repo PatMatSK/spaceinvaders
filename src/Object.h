@@ -1,10 +1,10 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-
 #include "imports.cpp"
 using namespace std;
-/*
+
+/**
  * This class represents all objects in game, sets some common methods and stores common variables.
  */
 class Object{

@@ -6,11 +6,12 @@
 #include "Object.h"
 #include "Bullet.h"
 #include "BulletRandom.h"
-/*
+using namespace std;
+
+/**
  * This class represents one of our enemies. In this program we use subclasses of Enemies.
  * Enemy can move down and shoot.
  */
-using namespace std;
 
 class Enemy:public Object{
 public:

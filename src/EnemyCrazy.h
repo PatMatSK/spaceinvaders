@@ -6,7 +6,7 @@
 #include "Bullet.h"
 #include "BulletRandom.h"
 #include "BulletBasic.h"
-/*
+/**
  * Subclass of enemy, that randomly decides whether to shoot basic bullet or random bullet.
  * Moves by changing positions of side parts, that makes harder to hit.
  */

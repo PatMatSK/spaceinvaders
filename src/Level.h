@@ -13,13 +13,14 @@
 #include "BonusShield.h"
 #include "BonusRepair.h"
 #include "BonusDeleteObstacle.h"
-/*
+using namespace std;
+
+/**
  * This is the main class that represents one level ( one wave of enemies ).
  * This class manages introduction, writing top players, saving score.
  * Main method is play, where actually whole game is happening. Also saves obstacles for next level
  * and store information what to do when Level ends.
  */
-using namespace std;
 
 class Level{
 private:

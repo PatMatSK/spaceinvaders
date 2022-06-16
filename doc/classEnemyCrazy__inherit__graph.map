@@ -1,5 +1,0 @@
-<map id="EnemyCrazy" name="EnemyCrazy">
-<area shape="rect" id="node1" title=" " alt="" coords="5,155,109,181"/>
-<area shape="rect" id="node2" href="$classEnemy.html" title=" " alt="" coords="24,80,91,107"/>
-<area shape="rect" id="node3" href="$classObject.html" title=" " alt="" coords="25,5,89,32"/>
-</map>

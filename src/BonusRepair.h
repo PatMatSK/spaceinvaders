@@ -6,7 +6,7 @@
 #include "SpaceShip.h"
 #include "EnemyArmy.h"
 #include "Obstacle.h"
-/*
+/**
  * bonus that rapairs all abstacles.
  */
 class BonusRepair: public Bonus

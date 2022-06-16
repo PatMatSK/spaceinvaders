@@ -3,7 +3,7 @@
 
 #include "imports.cpp"
 #include "Bullet.h"
-/*
+/**
  * Bullet that moves to random side each iteration.
  */
 class BulletRandom: public Bullet {

@@ -5,7 +5,7 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "BulletRandom.h"
-/*
+/**
  * Subclass of enemy, that shoot only random bullets and moves like snake ( zig-zag ).
  */
 class EnemySnake: public Enemy {

@@ -1,12 +1,12 @@
+
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 
 #include "imports.cpp"
-
 #include "Object.h"
-
 using namespace std;
-/*
+
+/**
  * This class represents obstacle, that can be destroyed part by part or at once.
  */
 class Obstacle: public Object{

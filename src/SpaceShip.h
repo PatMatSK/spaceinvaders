@@ -2,15 +2,15 @@
 #define SPACESHIP_H
 
 #include "imports.cpp"
-
 #include "Object.h"
 #include "Bullet.h"
 #include "BulletBasic.h"
-/*
+using namespace std;
+
+/**
  * This class represents our spaceShip, we can move left, right or shoot basic bullet.
  * Bonus can say to activate shield, and level to deactivate shield, if we got one.
  */
-using namespace std;
 
 class SpaceShip : public Object {
 private:

@@ -29,7 +29,7 @@ compile: all
 	$(CXX) $(FLAGS) -o matulpat build/*.o -lncurses
 
 clean:
-	rm -rf build Makefile.d matulpat assets/obstacles.txt
+	rm -rf build Makefile.d matulpat assets/obstacles.txt doc
 
 deps:
 	$(CXX) -MM src/*.cpp > Makefile.d
@@ -40,6 +40,9 @@ run: compile
 	./matulpat
 
 doc:
-	echo "Documenation already exists."
+	rm -rf doc
+	cp zadani.txt src/README.md
+	doxygen Doxyfile
+	rm src/README.md
 
 .PHONY: clean

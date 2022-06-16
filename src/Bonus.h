@@ -6,7 +6,7 @@
 #include "EnemyArmy.h"
 #include "Obstacle.h"
 
-/*
+/**
  * Class that manage all bonuses.
  */
 class Bonus {

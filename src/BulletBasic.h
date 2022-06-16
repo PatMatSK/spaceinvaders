@@ -3,7 +3,7 @@
 
 #include "imports.cpp"
 #include "Bullet.h"
-/*
+/**
  * Basic bullet that moves only forward.
  */
 class BulletBasic: public Bullet {

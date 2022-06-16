@@ -6,7 +6,7 @@
 #include "SpaceShip.h"
 #include "EnemyArmy.h"
 #include "Obstacle.h"
-/*
+/**
  * Bonus that stops enemies for short time.
  */
 class BonusStop: public Bonus
