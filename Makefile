@@ -30,6 +30,7 @@ compile: all
 
 clean:
 	rm -rf build Makefile.d matulpat assets/obstacles.txt doc
+	(cd examples && make clean)
 
 deps:
 	$(CXX) -MM src/*.cpp > Makefile.d
