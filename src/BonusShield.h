@@ -6,7 +6,9 @@
 #include "SpaceShip.h"
 #include "EnemyArmy.h"
 #include "Obstacle.h"
-
+/*
+ * Bonus that gives us a shield.
+ */
 class BonusShield: public Bonus
 {
 public:

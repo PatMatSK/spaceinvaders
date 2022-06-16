@@ -8,7 +8,10 @@
 #include "EnemySnake.h"
 #include "EnemyCrazy.h"
 #include "Bullet.h"
-
+/*
+ * This class represents all enemies in one wave.
+ * Manages moving of enemies, changing their direction and choose one to shoot if it is needed.
+ */
 using namespace std;
 
 class EnemyArmy{

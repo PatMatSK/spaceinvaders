@@ -3,7 +3,9 @@
 
 #include "imports.cpp"
 #include "Bonus.h"
-
+/*
+ * Bonus that deletes random obstacle.
+ */
 class BonusDeleteObstacle: public Bonus
 {
 public:

@@ -2,7 +2,9 @@
 #define BULLET_H
 
 #include "Object.h"
-
+/*
+ * This class is main skeleton of Bullet. In this program we use certain subclasses of Bullet.
+ */
 using namespace std;
 
 class Bullet: public Object{

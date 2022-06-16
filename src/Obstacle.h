@@ -6,7 +6,9 @@
 #include "Object.h"
 
 using namespace std;
-
+/*
+ * This class represents obstacle, that can be destroyed part by part or at once.
+ */
 class Obstacle: public Object{
 private:
     vector<pair<int,int>> origin;

@@ -5,7 +5,9 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "BulletBasic.h"
-
+/*
+ * Just basic subclass of enemy, shoot basic bullets and moves predictable.
+ */
 class EnemyBasic: public Enemy {
 public:
                         EnemyBasic  ( WINDOW * w, int a, int b );
